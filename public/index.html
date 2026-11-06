@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BLAST RADIUS ZERO (BRZ-0) — Vultr Autonomous Sandbox Containment Cockpit</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div class="cockpit-shell">
+    <!-- TOP TACTICAL HUD -->
+    <header class="top-hud" role="banner">
+      <div class="brand-cluster">
+        <div class="brand-emblem" aria-hidden="true">BRZ-0</div>
+        <div class="brand-titles">
+          <div class="brand-title-row">
+            <h1>BLAST RADIUS ZERO</h1>
+            <span class="brand-subtag">VULTR AGENT RUSH // CHALLENGE 1</span>
+          </div>
+          <p class="brand-subtitle">Autonomous Vultr Serverless Inference &amp; 4-Pillar Ephemeral Sandbox Cockpit</p>
+        </div>
+      </div>
+
+      <!-- 4 MANDATORY CONTAINMENT PILLARS -->
+      <div class="pillars-strip" aria-label="4 Containment Pillars Live Status">
+        <div id="pillar-1" class="pillar-pill verified" title="Child process never executes in host runtime PID">
+          <span class="pillar-dot"></span>
+          <div class="pillar-meta">
+            <span class="pillar-num">PILLAR 1</span>
+            <strong class="pillar-name">Process Isolation</strong>
+            <span class="pillar-detail" id="pillar-1-detail">Host vs Child PID Split</span>
+          </div>
+        </div>
+
+        <div id="pillar-2" class="pillar-pill verified" title="Zero host API keys or secrets exposed to sandbox env">
+          <span class="pillar-dot"></span>
+          <div class="pillar-meta">
+            <span class="pillar-num">PILLAR 2</span>
+            <strong class="pillar-name">Secret Hygiene</strong>
+            <span class="pillar-detail" id="pillar-2-detail">0 Keys in Sandbox Env</span>
+          </div>
+        </div>
+
+        <div id="pillar-3" class="pillar-pill verified" title="Hard 64MB V8 Heap Ceiling + Watchdog SIGKILL Timeout">
+          <span class="pillar-dot"></span>
+          <div class="pillar-meta">
+            <span class="pillar-num">PILLAR 3</span>
+            <strong class="pillar-name">Resource Limits</strong>
+            <span class="pillar-detail" id="pillar-3-detail">64MB Cap &bull; Watchdog SIGKILL</span>
+          </div>
+        </div>
+
+        <div id="pillar-4" class="pillar-pill verified" title="Ephemeral workspace wiped via fs.rmSync after every single task">
+          <span class="pillar-dot"></span>
+          <div class="pillar-meta">
+            <span class="pillar-num">PILLAR 4</span>
+            <strong class="pillar-name">Lifecycle Discipline</strong>
+            <span class="pillar-detail" id="pillar-4-detail">Ephemeral Wipe Verified</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT TELEMETRY & VULTR CONFIG -->
+      <div class="hud-right">
+        <div id="host-bleed-badge" class="hud-badge badge-emerald" title="Cryptographic verification of zero host contamination">
+          0.00% HOST BLEED
+        </div>
+        <div id="inference-mode-badge" class="hud-badge badge-cyan" title="Active Vultr Serverless Inference Mode &amp; Model">
+          qwen2.5-coder-32b &bull; DETERMINISTIC TWIN
+        </div>
+        <button id="btn-config-key" type="button" class="btn-hud-config" title="Configure Vultr Serverless Inference API Key &amp; Model">
+          &#9881; Vultr API Config
+        </button>
+      </div>
+    </header>
+
+    <!-- INLINE VULTR API KEY & MODEL POPOVER MODAL -->
+    <div id="modal-config-key" class="config-modal hidden" role="dialog" aria-modal="true" aria-labelledby="modal-config-title">
+      <div class="config-modal-card">
+        <div class="config-modal-header">
+          <div>
+            <span class="section-eyebrow">VULTR SERVERLESS INFERENCE ENGINE</span>
+            <h2 id="modal-config-title">Configure Live API Key &amp; Model</h2>
+          </div>
+          <button id="btn-close-config" type="button" class="btn-icon-close" aria-label="Close configuration">&times;</button>
+        </div>
+        <p class="config-modal-desc">
+          Endpoint: <code>https://api.vultrinference.com/v1/chat/completions</code>.
+          When no key is set, BRZ-0 runs its <strong>Deterministic Vultr Inference Twin</strong> so every sandbox mission and red-team strike executes 100% real isolated child processes out of the box.
+        </p>
+        <div class="config-form-grid">
+          <label class="form-field">
+            <span>Vultr Serverless Inference Model</span>
+            <select id="select-vultr-model">
+              <option value="qwen2.5-coder-32b-instruct">qwen2.5-coder-32b-instruct (Default Code Agent)</option>
+              <option value="deepseek-r1">deepseek-r1 (Deep Reasoning)</option>
+              <option value="llama-3.3-70b-instruct">llama-3.3-70b-instruct (General Instruct)</option>
+            </select>
+          </label>
+          <label class="form-field">
+            <span>Vultr API Key (<code>VULTR_INFERENCE_API_KEY</code> — Held in Host Memory Only, Scrubbed from Sandbox)</span>
+            <input
+              id="input-vultr-key"
+              type="password"
+              placeholder="Enter Vultr Serverless Inference Bearer Key (or leave blank for Deterministic Twin)"
+              autocomplete="off"
+            />
+          </label>
+        </div>
+        <div class="config-modal-footer">
+          <span id="config-save-feedback" class="config-feedback">Host Sentinel Armed &bull; Zero keys passed to child env</span>
+          <div class="config-modal-actions">
+            <button id="btn-save-key" type="button" class="btn-primary-cyan">Save &amp; Arm Vultr Inference</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MAIN 3-COLUMN TACTICAL WORKSPACE -->
+    <main class="cockpit-grid">
+      <!-- LEFT COLUMN: AUTONOMOUS MISSIONS & RED-TEAM CHAOS STRIKE BAR -->
+      <aside class="panel left-deck" aria-label="Mission &amp; Red-Team Controls">
+        <!-- PATTERN A & B AUTONOMOUS MISSIONS -->
+        <section class="deck-section">
+          <div class="section-header">
+            <span class="section-eyebrow">AUTONOMOUS AGENT MISSIONS</span>
+            <span class="section-badge">PATTERNS A &amp; B</span>
+          </div>
+
+          <div class="action-stack">
+            <button id="btn-mission-self-heal" type="button" class="action-btn mission-btn active-action">
+              <div class="btn-top-line">
+                <span class="btn-tag tag-cyan">PATTERN A &bull; SELF-HEAL</span>
+                <span class="btn-shortcut">2 Sandboxes</span>
+              </div>
+              <strong class="btn-title">Autonomous Self-Healing Parser</strong>
+              <span class="btn-sub">Crashes on corrupt row in Sandbox #1 &rarr; Vultr patches code &rarr; Verified in Sandbox #2</span>
+            </button>
+
+            <button id="btn-mission-cve-audit" type="button" class="action-btn mission-btn">
+              <div class="btn-top-line">
+                <span class="btn-tag tag-emerald">PATTERN A &bull; ZERO-TRUST</span>
+                <span class="btn-shortcut">SHA-256 Audit</span>
+              </div>
+              <strong class="btn-title">Zero-Trust CVE &amp; Crypto Auditor</strong>
+              <span class="btn-sub">Audits dependency tree &amp; HMAC signatures inside isolated zero-secret jail</span>
+            </button>
+
+            <button id="btn-mission-hostile-dom" type="button" class="action-btn mission-btn">
+              <div class="btn-top-line">
+                <span class="btn-tag tag-amber">PATTERN B &bull; DOM GATE</span>
+                <span class="btn-shortcut">Human Gate</span>
+              </div>
+              <strong class="btn-title">Hostile Web/DOM Quarantine</strong>
+              <span class="btn-sub">Strips hidden prompt injection &amp; freezes $4,820 payout behind Human Approval Gate</span>
+            </button>
+          </div>
+
+          <!-- CUSTOM UNTRUSTED JS SANDBOX RUNNER -->
+          <div class="custom-code-box">
+            <div class="custom-code-header">
+              <label for="input-custom-code">Untrusted Custom JS Payload (Pattern A)</label>
+              <span class="jail-chip">Preload Jail Active</span>
+            </div>
+            <textarea
+              id="input-custom-code"
+              rows="3"
+              spellcheck="false"
+              aria-label="Untrusted Custom JS Payload"
+            >const fs = require('fs');
+console.log(fs.readFileSync('../server.js', 'utf8'));</textarea>
+            <button id="btn-mission-custom" type="button" class="btn-custom-exec">
+              &#9654; Execute Untrusted Payload &amp; Self-Heal
+            </button>
+          </div>
+        </section>
+
+        <!-- 1-CLICK RED-TEAM CHAOS STRIKE BAR -->
+        <section class="deck-section redteam-section">
+          <div class="section-header">
+            <span class="section-eyebrow crimson-text">RED-TEAM CHAOS STRIKE BAR</span>
+            <span class="section-badge badge-crimson">LIVE EXPLOITS</span>
+          </div>
+
+          <button id="btn-strike-gauntlet" type="button" class="btn-gauntlet">
+            &#128293; RUN FULL 4-PILLAR CONTAINMENT GAUNTLET
+          </button>
+
+          <div class="strike-grid">
+            <button id="btn-strike-exfil" type="button" class="strike-btn">
+              <span class="strike-id">STRIKE 1 &bull; PILLAR 1+2</span>
+              <strong>Env Secret Exfil &amp; <code>../</code> Read</strong>
+            </button>
+
+            <button id="btn-strike-rmrf" type="button" class="strike-btn">
+              <span class="strike-id">STRIKE 2 &bull; PILLAR 1+4</span>
+              <strong>Destructive <code>rm -rf ..</code> Escape</strong>
+            </button>
+
+            <button id="btn-strike-loop" type="button" class="strike-btn">
+              <span class="strike-id">STRIKE 3 &bull; PILLAR 3</span>
+              <strong>Infinite Loop &amp; 64MB Bomb</strong>
+            </button>
+
+            <button id="btn-strike-dom" type="button" class="strike-btn">
+              <span class="strike-id">STRIKE 4 &bull; PATTERN B</span>
+              <strong>Prompt-Injected DOM Trap</strong>
+            </button>
+          </div>
+        </section>
+      </aside>
+
+      <!-- CENTER COLUMN: EXECUTION & SELF-HEALING ARENA -->
+      <section class="panel center-arena" aria-label="Autonomous Execution &amp; Self-Healing Arena">
+        <!-- 4-STAGE PIPELINE STEPPER -->
+        <div id="pipeline-stepper" class="pipeline-stepper" aria-label="4-Stage Containment Pipeline">
+          <div class="pipeline-step completed" data-step="1">
+            <span class="step-index">1</span>
+            <div class="step-text">
+              <strong>Vultr Inference Plan</strong>
+              <span id="step-1-sub">Code Gen &amp; AST Strategy</span>
+            </div>
+          </div>
+          <div class="pipeline-connector"></div>
+          <div class="pipeline-step completed" data-step="2">
+            <span class="step-index">2</span>
+            <div class="step-text">
+              <strong>Ephemeral Spawn</strong>
+              <span id="step-2-sub">Isolated PID &amp; 0-Secret Env</span>
+            </div>
+          </div>
+          <div class="pipeline-connector"></div>
+          <div class="pipeline-step completed" data-step="3">
+            <span class="step-index">3</span>
+            <div class="step-text">
+              <strong>Sandbox Execution / Watchdog</strong>
+              <span id="step-3-sub">64MB Cap &amp; Preload Jail</span>
+            </div>
+          </div>
+          <div class="pipeline-connector"></div>
+          <div class="pipeline-step completed" data-step="4">
+            <span class="step-index">4</span>
+            <div class="step-text">
+              <strong>Ephemeral Wipe &amp; SHA-256</strong>
+              <span id="step-4-sub">fs.rmSync Verified === false</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- HIGH-IMPACT RUN STATUS BANNER -->
+        <div id="run-banner" class="run-banner status-emerald">
+          <div class="run-banner-left">
+            <div class="run-banner-eyebrow">
+              <span id="banner-pattern-tag" class="banner-tag">PATTERN A // AUTONOMOUS CODE EXECUTION</span>
+              <span id="banner-endpoint-pill" class="endpoint-pill">https://api.vultrinference.com/v1/chat/completions</span>
+            </div>
+            <h2 id="banner-title">Autonomous Self-Healing Revenue &amp; Telemetry Parser</h2>
+          </div>
+          <div class="run-banner-right">
+            <div class="banner-metric">
+              <span class="metric-label">DURATION</span>
+              <strong id="banner-duration">195 ms</strong>
+            </div>
+            <div class="banner-metric">
+              <span class="metric-label">SANDBOXES WIPED</span>
+              <strong id="banner-sandboxes-count">2 / 2</strong>
+            </div>
+            <div id="banner-outcome-badge" class="outcome-badge badge-emerald">
+              SELF_HEALED_VERIFIED
+            </div>
+          </div>
+        </div>
+
+        <!-- 1-GLANCE STORY SUMMARY STRIP + INTERACTIVE ATTEMPT / STRIKE TABS -->
+        <div class="arena-controls-bar">
+          <div id="attempt-tabs" class="attempt-tabs" role="tablist" aria-label="Sandbox Run Attempts or Gauntlet Strikes">
+            <!-- Dynamically populated tabs (e.g. Attempt 1 vs Attempt 2, or Strike 1..4) -->
+          </div>
+          <div id="story-comparison-strip" class="story-comparison-strip">
+            <!-- 1-glance summary of self-heal progression or 4-strike gauntlet containment -->
+          </div>
+        </div>
+
+        <!-- SPLIT CODE & OUTPUT TERMINAL VIEWPORT -->
+        <div class="terminal-split">
+          <!-- LEFT PANE: EXECUTED SANDBOX CODE & VULTR INFERENCE TELEMETRY -->
+          <div class="terminal-pane">
+            <div class="pane-header">
+              <div class="pane-title-group">
+                <span class="pane-dot dot-cyan"></span>
+                <strong id="code-pane-title">Sandbox Executed Code &amp; Vultr Reasoning</strong>
+              </div>
+              <button id="btn-toggle-request" type="button" class="btn-mini-toggle">
+                Inspect Vultr JSON Payload
+              </button>
+            </div>
+            <div id="code-viewer" class="code-viewer" tabindex="0">
+              <!-- Populated with Vultr reasoning banner + code + optional outbound request JSON -->
+            </div>
+          </div>
+
+          <!-- RIGHT PANE: REAL STDOUT, STDERR, CONTAINMENT INTERCEPTS & PARSED RESULT -->
+          <div class="terminal-pane">
+            <div class="pane-header">
+              <div class="pane-title-group">
+                <span class="pane-dot dot-emerald" id="output-pane-dot"></span>
+                <strong id="output-pane-title">Real Child-Process Stdio &amp; Containment Telemetry</strong>
+              </div>
+              <span id="output-exit-pill" class="exit-pill">EXIT 0 &bull; PID ISOLATED</span>
+            </div>
+            <div id="output-viewer" class="output-viewer" tabindex="0">
+              <!-- Populated with real stdout, stderr, [CONTAINMENT_INTERCEPT] badges, and structured output -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- RIGHT COLUMN: HUMAN APPROVAL GATE + CRYPTOGRAPHIC SHA-256 CONTAINMENT RECEIPT -->
+      <aside class="panel right-inspector" aria-label="Human Approval Gate &amp; Cryptographic Receipt">
+        <!-- PATTERN B: HUMAN APPROVAL GATE CARD -->
+        <section id="approval-gate-card" class="approval-gate-card gate-standby">
+          <div class="gate-header">
+            <div>
+              <span class="section-eyebrow">PATTERN B &bull; MANDATORY HUMAN-IN-THE-LOOP</span>
+              <h3>High-Risk Action Approval Gate</h3>
+            </div>
+            <span id="gate-status-badge" class="gate-badge badge-standby">NO PENDING GATE</span>
+          </div>
+
+          <div id="gate-body-content" class="gate-body">
+            <p class="gate-summary" id="gate-summary-text">
+              Quarantines untrusted DOM/browser mutations (`EXECUTE_VENDOR_PAYOUT`, firewall port changes, credential exfil) until explicit operator sign-off. Trigger <strong>Hostile Web/DOM Quarantine</strong> or <strong>Strike 4</strong> to test live.
+            </p>
+            <div id="gate-threats-list" class="gate-threats-list"></div>
+          </div>
+
+          <div class="gate-actions">
+            <button id="btn-gate-approve" type="button" class="btn-gate-approve" disabled>
+              &#10003; APPROVE SAFE SUBSET ONLY
+            </button>
+            <button id="btn-gate-reject" type="button" class="btn-gate-reject" disabled>
+              &#10005; BLOCK &amp; QUARANTINE
+            </button>
+          </div>
+        </section>
+
+        <!-- CRYPTOGRAPHIC SHA-256 CONTAINMENT RECEIPT INSPECTOR -->
+        <section id="receipt-inspector" class="receipt-inspector">
+          <div class="receipt-header">
+            <div>
+              <span class="section-eyebrow">CRYPTOGRAPHIC CONTAINMENT PROOF</span>
+              <h3>SHA-256 Ephemeral Teardown Receipt</h3>
+            </div>
+            <button id="btn-copy-receipt" type="button" class="btn-copy-receipt">
+              &#128203; Copy Receipt JSON
+            </button>
+          </div>
+
+          <!-- 4-PILLAR PROOF CHECKMARKS -->
+          <div class="receipt-pillars-grid">
+            <div class="receipt-proof-item" id="proof-process-isolated">
+              <span class="proof-check">&#10003;</span>
+              <span>processIsolated: <strong>true</strong></span>
+            </div>
+            <div class="receipt-proof-item" id="proof-secrets-scrubbed">
+              <span class="proof-check">&#10003;</span>
+              <span>secretsScrubbed: <strong>true (0 leaked)</strong></span>
+            </div>
+            <div class="receipt-proof-item" id="proof-resource-capped">
+              <span class="proof-check">&#10003;</span>
+              <span>resourceCapped: <strong>64MB / Watchdog</strong></span>
+            </div>
+            <div class="receipt-proof-item" id="proof-ephemeral-destroyed">
+              <span class="proof-check">&#10003;</span>
+              <span>ephemeralDestroyed: <strong>true</strong></span>
+            </div>
+          </div>
+
+          <!-- KEY-VALUE TELEMETRY TABLE -->
+          <div class="receipt-kv-grid">
+            <div class="kv-cell">
+              <span class="kv-label">Receipt ID</span>
+              <code id="rcpt-id">rcpt-init</code>
+            </div>
+            <div class="kv-cell">
+              <span class="kv-label">Sandbox Run ID</span>
+              <code id="rcpt-run-id">brz-init</code>
+            </div>
+            <div class="kv-cell">
+              <span class="kv-label">Child PID vs Host PID</span>
+              <code id="rcpt-pids">Child: -- / Host: --</code>
+            </div>
+            <div class="kv-cell">
+              <span class="kv-label">Exit Code / Signal</span>
+              <code id="rcpt-exit">code=0 / sig=null</code>
+            </div>
+            <div class="kv-cell">
+              <span class="kv-label">Wall-Clock / Budget</span>
+              <code id="rcpt-duration">-- ms / 1500 ms</code>
+            </div>
+            <div class="kv-cell">
+              <span class="kv-label">Artifacts Before Wipe</span>
+              <code id="rcpt-artifacts">0 files (0B) &rarr; Wiped</code>
+            </div>
+            <div class="kv-cell kv-full">
+              <span class="kv-label">Scrubbed Child Env Keys Visible (Zero Secrets)</span>
+              <code id="rcpt-env-keys">PATH, SYSTEMROOT, HOME, TEMP, TMP, TZ, BRZ_SANDBOX_ID, BRZ_CONTAINMENT_MODE</code>
+            </div>
+          </div>
+
+          <!-- FULL SHA-256 HASH BOX -->
+          <div class="sha256-box">
+            <div class="sha256-label-row">
+              <span>IMMUTABLE RECEIPT SHA-256 DIGEST</span>
+              <span class="verified-stamp">VERIFIED 0% BLEED</span>
+            </div>
+            <code id="receipt-sha256" class="sha256-hash">initializing-sha256-containment-receipt...</code>
+          </div>
+        </section>
+      </aside>
+    </main>
+
+    <!-- BOTTOM STRIP: IMMUTABLE SESSION CONTAINMENT LEDGER -->
+    <footer class="bottom-ledger" aria-label="Immutable Session Containment Ledger">
+      <div class="ledger-header-bar">
+        <div class="ledger-title-group">
+          <span class="ledger-live-dot"></span>
+          <strong>IMMUTABLE SESSION CONTAINMENT LEDGER</strong>
+          <span id="ledger-count-badge" class="ledger-count-badge">0 Runs Recorded</span>
+        </div>
+        <span class="ledger-hint">Click any ledger row to inspect its cryptographic SHA-256 receipt &amp; sandbox telemetry</span>
+      </div>
+
+      <div class="ledger-table-wrap">
+        <table id="ledger-table" class="ledger-table">
+          <thead>
+            <tr>
+              <th>Timestamp</th>
+              <th>Category</th>
+              <th>Mission / Strike</th>
+              <th>Sandbox PID</th>
+              <th>Status</th>
+              <th>Duration</th>
+              <th>Pillar Proofs</th>
+              <th>Receipt SHA-256</th>
+            </tr>
+          </thead>
+          <tbody id="ledger-tbody">
+            <!-- Populated dynamically from /api/ledger -->
+          </tbody>
+        </table>
+      </div>
+    </footer>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>

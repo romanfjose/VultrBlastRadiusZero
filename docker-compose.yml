@@ -1,0 +1,25 @@
+version: "3.9"
+
+services:
+  brz-cockpit:
+    build: .
+    container_name: vultr-blast-radius-zero
+    ports:
+      - "4680:4680"
+    environment:
+      - NODE_ENV=production
+      - PORT=4680
+      - VULTR_INFERENCE_API_KEY=${VULTR_INFERENCE_API_KEY:-}
+      - VULTR_INFERENCE_MODEL=${VULTR_INFERENCE_MODEL:-qwen2.5-coder-32b-instruct}
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    tmpfs:
+      - /tmp:rw,nosuid,nodev,mode=1777,size=128m
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+    restart: unless-stopped

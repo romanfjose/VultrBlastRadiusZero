@@ -1,0 +1,32 @@
+# Project Vector & Architectural Decisions (`VECTOR_LOG.md`)
+
+## 1. Objective & Current Direction
+- **Core Objective:** Win Challenge 1 (*Blast Radius Zero — Sandboxed Agent Execution*) of the Vultr Agent Rush Hackathon with an autonomous Vultr Serverless Inference code/DOM execution engine and 100vh tactical containment cockpit enforcing `0.00% Host Bleed` across all 4 mandatory containment pillars.
+- **Current Sprint Focus:** Beat 3A (Engine Room 02 Anti-Spoof Hardening) — All 8 `Helmet 08` audit findings resolved, tested, and locked.
+
+## 2. Locked Systems (Verified Working — DO NOT TOUCH Without Explicit Order)
+- `src/sandboxRuntime.js` — 4-Pillar Ephemeral Sandbox Engine + `_brz_jail_prelude.js` (ESM dynamic `import()` & prototype poisoning, `fs`/`fs.promises`/`readlink` jail, `process.binding` prototype lock, honest `probeDockerDaemon()` + real `BRZ_USE_DOCKER_SANDBOX=1` Docker container execution). Verified working. Hands off.
+- `src/vultrClient.js` — Genuine Live Vultr Serverless Inference (`https://api.vultrinference.com/v1/chat/completions`) across every mission and attempt when `VULTR_INFERENCE_API_KEY` is set + zero-config Deterministic Vultr Inference Twin fallback. Verified working. Hands off.
+- `src/agentOrchestrator.js` — Pattern A Self-Healing Loop, Pattern B Hostile DOM Quarantine + Human Approval Gate (`404`/`409` strict guards), 4-Strike Red-Team Chaos Gauntlet, and bounded 200-entry ring-buffered ledger. Verified working. Hands off.
+- `server.js` — Zero-dependency HTTP server on port `4680` mounting `GET /api/health`, `POST /api/agent/mission`, `POST /api/agent/run`, `POST /api/redteam/strike`, `POST /api/agent/approve`, `GET /api/ledger`, and `POST /api/config/key`. Verified working. Hands off.
+- `public/index.html`, `public/styles.css`, `public/app.js` — 100vh Tactical Containment Cockpit with zero dead air on boot and full `vectorType`/`quarantinedPayload`/`severity` threat rendering. Verified working. Hands off.
+
+## 3. Tombstones (Rejected On Purpose — NEVER RE-ADD)
+- `LIVE_HYBRID_DETERMINISTIC_GUARD` short-circuit in `src/vultrClient.js` — Rejected because skipping `fetch()` on `self_heal_parser` Attempt 1 or `hostile_dom_audit` when a live API key is configured spoofs live cloud inference.
+- Unsealed prototype methods on `ChildProcess.prototype`, `net.Socket.prototype`, or `process.binding` — Rejected because ESM dynamic `await import('node:child_process')` and `delete process.binding` bypass CJS-only `Module._load` hooks unless underlying prototypes and `Object.getPrototypeOf(process)` are poisoned and locked with `{ writable: false, configurable: false }`.
+- `tmpfs: /tmp:rw,noexec` without `mode=1777` in `docker-compose.yml` — Rejected because `cap_drop: ALL` with non-root user `brzoperator` requires `mode=1777` on `/tmp` to create `/tmp/brz-ephemeral-<runId>` sandboxes.
+
+## 4. Architectural Decisions (Intentional Trade-Offs & Constraints Solved)
+| ID | Decision | Constraint / Failure It Solved (Why It's Built This Way) | Rule for Future Agents |
+|---|---|---|---|
+| ADR-01 | Zero external `npm` dependencies (100% Node.js `v22+` stdlib) | Eliminates `npm install` supply-chain risk and boots in `< 300ms` during judge evaluation. | Never add external packages to `package.json`. |
+| ADR-02 | Preload C++/JS prototype poisoning + `Object.defineProperty(..., { writable: false, configurable: false })` in `_brz_jail_prelude.js` | Node.js ESM `await import('node:child_process')` bypasses `Module._load`; poisoning and freezing `ChildProcess.prototype.spawn`, `net.Socket.prototype.connect`, `dns`, `vm`, and `Object.getPrototypeOf(process).binding` before user code runs blocks both CJS and ESM escape vectors. | Never remove prototype locks in `_brz_jail_prelude.js`. |
+| ADR-03 | Dual-Mode Vultr Inference Router (`LIVE_VULTR_CLOUD_INFERENCE` vs. `DETERMINISTIC_VULTR_INFERENCE_TWIN`) | Guarantees real HTTPS calls to `https://api.vultrinference.com/v1/chat/completions` whenever a key is present while allowing unkeyed local judge machines to execute 100% real OS child-process sandboxes out of the box. | Never short-circuit `fetch()` when `effectiveKey` is configured. |
+| ADR-04 | Honest `OS_EPHEMERAL_CHILD_JAIL` default driver + opt-in `BRZ_USE_DOCKER_SANDBOX=1` `DOCKER_EPHEMERAL_CONTAINER` execution | Ensures receipts honestly report the active isolation driver while supporting real `docker run --rm --network none` execution when enabled. | Keep receipt `runtimeMode` 100% aligned with the actual execution driver. |
+
+## 5. Change & Traceability Log
+| Pass | Helmet / Unit | Problem Targeted | Change & Rationale | Files | Verdict |
+|---|---|---|---|---|---|
+| #01 | `Engine Room 02 + Cockpit 01 + Bar 04` | Initial Challenge 1 architecture & 3-cycle adversarial QA | Built 4-pillar ephemeral sandbox runtime, Vultr Serverless Inference client, Pattern A + B orchestrator, 100vh cockpit, and 8-test suite. | `server.js`, `src/*`, `public/*`, `test/*` | `PASS` |
+| #02 | `Helmet 08 (Anti-Spoof Auditor)` | Deep spoof & bypass audit across all repo files | Identified 8 findings: ESM `import('node:child_process')` prototype bypass, `LIVE_HYBRID_DETERMINISTIC_GUARD` short-circuit, `probeDockerDaemon` label inflation, missing `/api/agent/run` alias, README/pitch schema drift, UI threat key mismatch, `docker-compose.yml` `/tmp` permissions, and missing `.gitignore`/`VECTOR_LOG.md`/git init. | Audit report | `AUDIT COMPLETE` |
+| #03 | `Helmet 02 + Helmet 06 (Beat 3A De-Spoofing)` | Repair all 8 `Helmet 08` findings | Poisoned & sealed `ChildProcess`/`net`/`dns`/`vm`/`inspector`/`worker_threads`/`process` prototypes against ESM `import()` escapes; removed `LIVE_HYBRID_DETERMINISTIC_GUARD` and wired rich schema prompts for live Vultr inference; wired real `BRZ_USE_DOCKER_SANDBOX=1` Docker execution & honest `runtimeMode`; mounted `POST /api/agent/run`; fixed `public/app.js` threat list fields; aligned `README.md`, `SUBMISSION_PITCH.md`, and `docker-compose.yml`; added `.gitignore` and `VECTOR_LOG.md`. | `src/sandboxRuntime.js`, `src/vultrClient.js`, `server.js`, `public/app.js`, `test/containment.test.js`, `README.md`, `SUBMISSION_PITCH.md`, `docker-compose.yml`, `.gitignore`, `VECTOR_LOG.md` | `PASS (Locked)` |

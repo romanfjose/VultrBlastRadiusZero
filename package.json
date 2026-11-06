@@ -1,0 +1,15 @@
+{
+  "name": "vultr-blast-radius-zero",
+  "version": "1.0.0",
+  "description": "BLAST RADIUS ZERO (BRZ-0) — Autonomous Vultr Serverless Inference Agent & 4-Pillar Ephemeral Containment Runtime",
+  "license": "MIT",
+  "type": "commonjs",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test test/containment.test.js"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
