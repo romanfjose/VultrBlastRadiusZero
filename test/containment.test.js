@@ -435,6 +435,14 @@ test('Anti-Spoof Fix #1 & #3: Blocks ESM dynamic import() ChildProcess/net escap
         results.readlinkSyncEscape = err.message.includes('[CONTAINMENT_INTERCEPT:') ? 'BLOCKED' : ('OTHER: ' + err.message);
       }
 
+      // 10. process.execve('/bin/sh') blocked on both process and processProto
+      try {
+        process.execve('/bin/sh', ['/bin/sh'], {});
+        results.processExecve = 'ESCAPED';
+      } catch (e) {
+        results.processExecve = e.message.includes('CONTAINMENT_INTERCEPT') ? 'BLOCKED' : 'OTHER';
+      }
+
       console.log(JSON.stringify(results));
     })();
   `;
@@ -643,6 +651,14 @@ test('Morning-After Pipeline 04 Hardening: Blocks Node 22 process.getBuiltinModu
       fs.closeSync(validFd);
       results.jailedFdRoundtrip = fs.readFileSync('./fd-test.txt', 'utf8') === 'ok-fd' ? 'OK' : 'FAIL';
 
+      // 10. process.execve('/bin/sh') blocked on both process and processProto
+      try {
+        process.execve('/bin/sh', ['/bin/sh'], {});
+        results.processExecve = 'ESCAPED';
+      } catch (e) {
+        results.processExecve = e.message.includes('CONTAINMENT_INTERCEPT') ? 'BLOCKED' : 'OTHER';
+      }
+
       console.log(JSON.stringify(results));
     })();
   `;
@@ -666,6 +682,7 @@ test('Morning-After Pipeline 04 Hardening: Blocks Node 22 process.getBuiltinModu
   assert.equal(checks.esmModuleCreateRequire, 'BLOCKED');
   assert.equal(checks.unverifiedFdRead, 'BLOCKED');
   assert.equal(checks.jailedFdRoundtrip, 'OK');
+  assert.equal(checks.processExecve, 'BLOCKED');
 
   // Verify /api/config/key returns top-level liveKeyConfigured and updates defaultModel
   const server = createAppServer();
@@ -711,7 +728,7 @@ test('Helmet 01 & 04 Cockpit UX Audit: Pre-baked v0.8 HTML panes, warm latestMis
   assert.match(indexHtml, /SELF_HEALED_VERIFIED/, 'HTML must pre-bake v0.8 self-healed telemetry');
   assert.match(indexHtml, /deepseek-v4\.1-flash-1017/, 'HTML must default to live Vultr model deepseek-v4.1-flash-1017');
 
-  const mission = await runMission({ missionType: 'cve_crypto_audit' });
+  const mission = await runMission({ missionType: 'cve_crypto_audit', apiKeyOverride: 'TWIN' });
   assert.equal(mission.status, 'VERIFIED_CLEAN_PASS');
 
   const server = createAppServer();

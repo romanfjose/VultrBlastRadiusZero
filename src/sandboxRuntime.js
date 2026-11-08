@@ -531,10 +531,19 @@ if (process.report && typeof process.report === 'object') {
   }
 }
 
+const blockedExecve = function blockedExecve() {
+  throw createInterceptError(
+    'PROCESS_EXECVE_BLOCKED',
+    'Direct process.execve replacement denied inside sandbox jail',
+    'EACCES_BRZ_SUBPROCESS'
+  );
+};
+
 const processProto = Object.getPrototypeOf(process);
 for (const targetObj of [process, processProto]) {
   lockProperty(targetObj, 'chdir', patchedChdir, false);
   lockProperty(targetObj, 'kill', blockedKill, false);
+  lockProperty(targetObj, 'execve', blockedExecve, false);
   lockProperty(targetObj, 'binding', blockedBinding, false);
   lockProperty(targetObj, '_linkedBinding', blockedLinkedBinding, false);
   lockProperty(targetObj, 'dlopen', blockedDlopen, false);
