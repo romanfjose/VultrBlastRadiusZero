@@ -9,7 +9,7 @@
 | **Live Vultr Cloud Compute Demo** | **`http://66.135.18.157:4680`** (Vultr EWR `vc2-1c-1gb` Ubuntu 24.04 LTS) |
 | **Containment Architecture** | Dual-Engine Ephemeral Sandbox (`Docker --network none --read-only` + OS Child-Process Kernel/V8 Jail) |
 | **Host Secret Bleed** | **`0.00%`** (`VULTR_INFERENCE_API_KEY` & `HOST_MASTER_SECRET` scrubbed prior to `spawn()`) |
-| **Automated Containment Suite** | **`11/11` Test Suites Passing** (`test/containment.test.js`) + **`25/25` Red-Team Exploit Vectors Blocked** |
+| **Automated Containment Suite** | **`12/12` Test Suites Passing** (`test/containment.test.js`) + **`25/25` Red-Team Exploit Vectors Blocked** |
 | **External `npm` Dependencies** | **`0`** (100% native Node.js `v22+` stdlib — boots in `< 300ms`) |
 | **License** | MIT (`LICENSE`) |
 
@@ -61,7 +61,7 @@ flowchart LR
     end
 
     subgraph VultrCloud["Vultr Serverless Inference API"]
-        VAPI["POST https://api.vultrinference.com/v1/chat/completions\nModels: qwen2.5-coder-32b-instruct | deepseek-r1 | llama-3.3-70b-instruct"]
+        VAPI["POST https://api.vultrinference.com/v1/chat/completions\nModels: deepseek-v4.1-flash-1017 | qwen3.8-flash-next | qwen3.8-27b | glm-5.3-flash"]
     end
 
     subgraph Sandbox["Ephemeral Per-Task Sandbox (os.tmpdir()/brz-ephemeral-<runId>)"]
@@ -85,7 +85,7 @@ flowchart LR
 Every agent code synthesis and self-healing repair cycle targets the OpenAI-compatible Vultr Serverless Inference endpoint:
 - **Endpoint:** `POST https://api.vultrinference.com/v1/chat/completions`
 - **Headers:** `Authorization: Bearer <VULTR_INFERENCE_API_KEY>`, `Content-Type: application/json`
-- **Supported Models:** `qwen2.5-coder-32b-instruct` (default for low-latency code synthesis and `stderr` patching), `deepseek-r1`, and `llama-3.3-70b-instruct`.
+- **Supported Models:** `deepseek-v4.1-flash-1017` (default for sub-second code synthesis and `stderr` patching), `qwen3.8-flash-next`, `qwen3.8-27b`, and `glm-5.3-flash` (plus backward-compatible aliases for `qwen2.5-coder-32b-instruct`, `deepseek-r1`, and `llama-3.3-70b-instruct`).
 - **Hard Circuit Breaker:** Every outbound `fetch` enforces `AbortSignal.timeout(8000)` so upstream network stalls never hang the cockpit.
 - **Full Payload Inspection:** Click **`Inspect Vultr JSON Payload`** in the Center Arena on any run to inspect the exact HTTP headers and messages array sent to `https://api.vultrinference.com/v1/chat/completions`.
 
@@ -153,8 +153,8 @@ To deploy `BRZ-0` on a **Vultr Cloud Compute** instance (Ubuntu 24.04 LTS / Dock
 
 ```bash
 # 1. Clone repository onto your Vultr Cloud Compute VM
-git clone https://github.com/<your-org>/vultr-blast-radius-zero.git
-cd vultr-blast-radius-zero
+git clone https://github.com/romanfjose/VultrBlastRadiusZero.git
+cd VultrBlastRadiusZero
 
 # 2. Configure your live Vultr Serverless Inference key
 cp .env.example .env
