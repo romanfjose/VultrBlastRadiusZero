@@ -77,7 +77,7 @@ while (true) {
   };
 
   const state = {
-    selectedModel: 'qwen2.5-coder-32b-instruct',
+    selectedModel: 'deepseek-v4.1-flash-1017',
     vultrStatus: null,
     sandboxStatus: null,
     activeMode: 'mission', // 'mission' | 'strike' | 'gauntlet'
@@ -217,7 +217,13 @@ while (true) {
     const modeLabel = health.vultrInference?.liveKeyConfigured
       ? 'LIVE VULTR API'
       : 'DETERMINISTIC TWIN';
-    const shortModel = (state.selectedModel || health.vultrInference?.defaultModel || 'qwen2.5-coder-32b').replace(
+    if (health.vultrInference?.defaultModel && !state.userSelectedModel) {
+      state.selectedModel = health.vultrInference.defaultModel;
+      if (el.selectVultrModel) {
+        el.selectVultrModel.value = state.selectedModel;
+      }
+    }
+    const shortModel = (state.selectedModel || health.vultrInference?.defaultModel || 'deepseek-v4.1-flash-1017').replace(
       '-instruct',
       ''
     );
@@ -243,6 +249,15 @@ while (true) {
         const ledgerData = await ledgerRes.json();
         state.ledgerEntries = ledgerData.entries || [];
         renderLedgerTable(state.ledgerEntries);
+
+        if (ledgerData.latestMission && !state.activeData) {
+          renderMissionResult(ledgerData.latestMission);
+        } else if (!state.activeReceipt && state.ledgerEntries.length > 0) {
+          const firstWithReceipt = state.ledgerEntries.find((e) => e.receipt);
+          if (firstWithReceipt?.receipt) {
+            updateReceiptInspector(firstWithReceipt.receipt);
+          }
+        }
 
         // If no activeGate is currently loaded, surface any pending gate
         if (!state.activeGate && Array.isArray(ledgerData.pendingApprovalGates) && ledgerData.pendingApprovalGates.length > 0) {
@@ -810,7 +825,8 @@ while (true) {
     });
 
     el.btnSaveKey.addEventListener('click', async () => {
-      state.selectedModel = el.selectVultrModel.value || 'qwen2.5-coder-32b-instruct';
+      state.selectedModel = el.selectVultrModel.value || 'deepseek-v4.1-flash-1017';
+      state.userSelectedModel = true;
       const apiKey = el.inputVultrKey.value.trim();
 
       try {
@@ -926,7 +942,9 @@ while (true) {
     cacheElements();
     wireEvents();
     await refreshHealthAndLedger();
-    // Zero Dead Air on Load: Auto-trigger Pattern A Self-Healing Parser Mission immediately
-    await runMissionFlow('self_heal_parser', {}, el.btnMissionSelfHeal);
+    // Zero Dead Air on Load: If server has not cached a warm mission yet, auto-trigger Pattern A Self-Healing Parser
+    if (!state.activeData) {
+      await runMissionFlow('self_heal_parser', {}, el.btnMissionSelfHeal);
+    }
   });
 })();
