@@ -972,12 +972,14 @@ async function executeInEphemeralSandbox({
             '/sandbox',
             'node:22-alpine',
             'node',
+            '--no-warnings',
             `--max-old-space-size=${MEMORY_CAP_MB}`,
             '--require',
             '/sandbox/_brz_jail_prelude.js',
             '/sandbox/_brz_task.js'
           ]
         : [
+            '--no-warnings',
             `--max-old-space-size=${MEMORY_CAP_MB}`,
             '--require',
             preludePath,
