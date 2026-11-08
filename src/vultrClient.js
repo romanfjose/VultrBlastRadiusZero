@@ -201,7 +201,7 @@ function synthesizeTwinCompletion({
     if (attempt === 1) {
       // Attempt 1 intentionally trusts raw telemetry batch and crashes with a real TypeError/RangeError
       // when hitting a corrupted Vultr multi-region latency row (NaN / null nested payload).
-      const code = `// Vultr Serverless Inference [qwen2.5-coder-32b-instruct] — Attempt 1
+      const code = `// Vultr Serverless Inference [deepseek-v4.1-flash-1017] — Attempt 1
 // Mission: Parse multi-region Vultr Cloud Compute telemetry & compute p95 SLA digest
 const fs = require('fs');
 const rawBatch = [
@@ -232,14 +232,17 @@ console.log(JSON.stringify({ status: 'OK', processed: normalized.length, rows: n
     }
 
     // Attempt 2: Self-healed code using the actual stderr captured from Attempt 1
-    const sanitizedErrorComment = String(stderrContext || 'TypeError on corrupted row')
-      .split('\n')[0]
+    const rawLines = String(stderrContext || 'TypeError on corrupted row').split('\n').map((l) => l.trim()).filter(Boolean);
+    const errorLine = rawLines.find((l) => /Error:|CRASH|EACCES/i.test(l)) || rawLines[0] || 'TypeError on corrupted row';
+    const sanitizedErrorComment = errorLine
+      .replace(/[A-Za-z]:[\\/][^\s:)"]+[\\/]brz-ephemeral-[a-zA-Z0-9_-]+/g, '<sandbox-temp>')
+      .replace(/\/tmp\/brz-ephemeral-[a-zA-Z0-9_-]+/g, '<sandbox-temp>')
       .replace(/\\/g, '/')
-      .replace(/[^\w\s:.\-[\]"=()/]/g, '')
+      .replace(/[^\w\s:.\-[\]"=()/<>]/g, '')
       .slice(0, 140);
 
-    const code = `// Vultr Serverless Inference [qwen2.5-coder-32b-instruct] — Attempt 2 (SELF-HEALED PATCH)
-// Healed from Sandbox #1 stderr: ${sanitizedErrorComment}
+    const code = `// Vultr Serverless Inference [deepseek-v4.1-flash-1017] — Attempt 2 (SELF-HEALED PATCH)
+// Healed from Sandbox #1 fault: ${sanitizedErrorComment}
 const fs = require('fs');
 const path = require('path');
 
@@ -310,7 +313,7 @@ console.log(JSON.stringify(digest));
   }
 
   if (missionType === 'cve_crypto_audit') {
-    const code = `// Vultr Serverless Inference [qwen2.5-coder-32b-instruct]
+    const code = `// Vultr Serverless Inference [deepseek-v4.1-flash-1017]
 // Mission: Sandboxed Zero-Trust Dependency & CVE Signature Auditor
 const crypto = require('crypto');
 const fs = require('fs');
@@ -375,7 +378,7 @@ console.log(JSON.stringify(report));
   }
 
   if (missionType === 'hostile_dom_audit') {
-    const code = `// Vultr Serverless Inference [qwen2.5-coder-32b-instruct]
+    const code = `// Vultr Serverless Inference [deepseek-v4.1-flash-1017]
 // Mission: Pattern B — Untrusted Browser/DOM Sanitizer & Prompt Injection Quarantine
 const fs = require('fs');
 const path = require('path');
@@ -491,7 +494,7 @@ throw new Error("Custom mission triggered intentional Sandbox #1 fault for self-
     ? String(stderrContext).split('\n')[0].replace(/\\/g, '/').slice(0, 160)
     : null;
 
-  const code = `// Vultr Serverless Inference [qwen2.5-coder-32b-instruct] — Sandboxed Custom Execution
+  const code = `// Vultr Serverless Inference [deepseek-v4.1-flash-1017] — Sandboxed Custom Execution
 const crypto = require('crypto');
 
 const promptTask = ${JSON.stringify(safePromptSummary)};
@@ -613,7 +616,9 @@ async function generateAgentAction({
     const data = await response.json();
     const msg = data?.choices?.[0]?.message || {};
     const rawContent = msg.content || '';
-    const reasoningField = typeof msg.reasoning === 'string' ? msg.reasoning.replace(/\s+/g, ' ').trim().slice(0, 400) : '';
+    const rawReasoning = typeof msg.reasoning === 'string' ? msg.reasoning.replace(/\s+/g, ' ').trim() : '';
+    const isInternalCoT = /^(?:We need|The user|Let's|First,|Okay,)/i.test(rawReasoning);
+    const reasoningField = !isInternalCoT && rawReasoning ? rawReasoning.slice(0, 320) : '';
     const { code: extractedCode, reasoning: liveReasoning } = extractCodeAndReasoning(rawContent);
 
     // For Pattern A Attempt 1 (self_heal_parser), ensure the script contains the TELEMETRY_SCHEMA_CRASH guard so Sandbox #1 reliably demonstrates crash containment and triggers Attempt 2 self-healing
