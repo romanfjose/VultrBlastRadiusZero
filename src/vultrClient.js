@@ -14,21 +14,70 @@
  *    execute real code inside real OS ephemeral sandboxes without stalling the cockpit.
  */
 
-const VULTR_INFERENCE_ENDPOINT = 'https://api.vultrinference.com/v1/chat/completions';
-const DEFAULT_VULTR_MODEL = process.env.VULTR_INFERENCE_MODEL || 'qwen2.5-coder-32b-instruct';
+const fs = require('fs');
+const path = require('path');
+
+(function loadDotEnvIfPresent() {
+  try {
+    const envPath = path.resolve(__dirname, '..', '.env');
+    if (!fs.existsSync(envPath)) return;
+    const raw = fs.readFileSync(envPath, 'utf8');
+    for (const line of raw.split(/\r?\n/)) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith('#')) continue;
+      const eqIdx = trimmed.indexOf('=');
+      if (eqIdx <= 0) continue;
+      const key = trimmed.slice(0, eqIdx).trim();
+      let val = trimmed.slice(eqIdx + 1).trim();
+      if (
+        (val.startsWith('"') && val.endsWith('"')) ||
+        (val.startsWith("'") && val.endsWith("'"))
+      ) {
+        val = val.slice(1, -1);
+      }
+      if (key && !(key in process.env) && val !== '') {
+        process.env[key] = val;
+      }
+    }
+  } catch {
+    // Ignore .env parse errors
+  }
+})();
+
+const VULTR_INFERENCE_BASE_URL = (
+  process.env.VULTR_INFERENCE_BASE_URL || 'https://api.vultrinference.com/v1'
+).replace(/\/+$/, '');
+const VULTR_INFERENCE_ENDPOINT = `${VULTR_INFERENCE_BASE_URL}/chat/completions`;
+const DEFAULT_VULTR_MODEL = process.env.VULTR_INFERENCE_MODEL || 'deepseek-v4.1-flash-1017';
 const SUPPORTED_MODELS = [
+  'deepseek-v4.1-flash-1017',
+  'qwen3.8-flash-next',
+  'qwen3.8-27b',
+  'glm-5.3-flash',
   'qwen2.5-coder-32b-instruct',
   'deepseek-r1',
   'llama-3.3-70b-instruct'
 ];
+const MODEL_ALIASES = {
+  'qwen2.5-coder-32b-instruct': 'qwen3.8-flash-next',
+  'deepseek-r1': 'deepseek-v4.1-flash-1017',
+  'llama-3.3-70b-instruct': 'glm-5.3-flash'
+};
 
 let runtimeConfiguredKey = null;
+let runtimeDefaultModel = DEFAULT_VULTR_MODEL;
 
-function setRuntimeApiKey(key) {
+function setRuntimeApiKey(key, model) {
   runtimeConfiguredKey = typeof key === 'string' && key.trim() ? key.trim() : null;
+  if (typeof model === 'string' && SUPPORTED_MODELS.includes(model.trim())) {
+    runtimeDefaultModel = model.trim();
+  }
+  const effectiveKey = getEffectiveApiKey();
   return {
     configured: Boolean(runtimeConfiguredKey),
-    maskedKey: maskKey(runtimeConfiguredKey)
+    liveKeyConfigured: Boolean(effectiveKey),
+    maskedKey: maskKey(effectiveKey),
+    defaultModel: runtimeDefaultModel
   };
 }
 
@@ -479,6 +528,7 @@ async function generateAgentAction({
   apiKeyOverride = ''
 }) {
   const selectedModel = SUPPORTED_MODELS.includes(model) ? model : DEFAULT_VULTR_MODEL;
+  const wireModel = MODEL_ALIASES[selectedModel] || selectedModel;
   const effectiveKey = getEffectiveApiKey(apiKeyOverride);
 
   const { systemPrompt, userMessageContent } = buildMissionPrompts({
@@ -497,7 +547,7 @@ async function generateAgentAction({
       'Content-Type': 'application/json'
     },
     body: {
-      model: selectedModel,
+      model: wireModel,
       temperature: 0.1,
       max_tokens: 1400,
       messages: [
@@ -553,16 +603,18 @@ async function generateAgentAction({
     }
 
     const data = await response.json();
-    const rawContent = data?.choices?.[0]?.message?.content || '';
+    const msg = data?.choices?.[0]?.message || {};
+    const rawContent = msg.content || '';
+    const reasoningField = typeof msg.reasoning === 'string' ? msg.reasoning.replace(/\s+/g, ' ').trim().slice(0, 400) : '';
     const { code: extractedCode, reasoning: liveReasoning } = extractCodeAndReasoning(rawContent);
 
     return {
       provider: 'Vultr Serverless Inference',
       endpoint: VULTR_INFERENCE_ENDPOINT,
-      model: selectedModel,
+      model: wireModel,
       mode: 'LIVE_VULTR_CLOUD_INFERENCE',
       code: extractedCode || twinResult.code,
-      reasoning: liveReasoning || twinResult.reasoning,
+      reasoning: liveReasoning || reasoningField || twinResult.reasoning,
       outboundRequest: outboundRequestPayload,
       latencyMs: Date.now() - startMs
     };
@@ -622,7 +674,7 @@ function getVultrClientStatus() {
   return {
     provider: 'Vultr Serverless Inference',
     endpoint: VULTR_INFERENCE_ENDPOINT,
-    defaultModel: DEFAULT_VULTR_MODEL,
+    defaultModel: runtimeDefaultModel,
     supportedModels: SUPPORTED_MODELS,
     liveKeyConfigured: Boolean(effectiveKey),
     maskedKey: maskKey(effectiveKey),

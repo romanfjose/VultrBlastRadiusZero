@@ -22,6 +22,39 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
+/**
+ * Zero-dependency .env loader (ensures .env on disk is loaded before planting
+ * host sentinels, while never overriding explicit shell env vars).
+ */
+function loadDotEnvIfPresent() {
+  try {
+    const envPath = path.resolve(__dirname, '..', '.env');
+    if (!fs.existsSync(envPath)) return;
+    const raw = fs.readFileSync(envPath, 'utf8');
+    for (const line of raw.split(/\r?\n/)) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith('#')) continue;
+      const eqIdx = trimmed.indexOf('=');
+      if (eqIdx <= 0) continue;
+      const key = trimmed.slice(0, eqIdx).trim();
+      let val = trimmed.slice(eqIdx + 1).trim();
+      if (
+        (val.startsWith('"') && val.endsWith('"')) ||
+        (val.startsWith("'") && val.endsWith("'"))
+      ) {
+        val = val.slice(1, -1);
+      }
+      if (key && !(key in process.env) && val !== '') {
+        process.env[key] = val;
+      }
+    }
+  } catch {
+    // Ignore .env parse errors
+  }
+}
+
+loadDotEnvIfPresent();
+
 // Plant Host Secret Sentinels in the parent process memory so secret-hygiene audits
 // and red-team strikes prove that secrets genuinely exist in the host process
 // and are 100% unreachable inside the child sandbox.
@@ -97,6 +130,13 @@ const dns = require('dns');
 const dnsPromises = require('dns/promises');
 const vm = require('vm');
 const inspector = require('inspector');
+const v8 = require('v8');
+const wasi = (() => { try { return require('wasi'); } catch { return null; } })();
+const traceEvents = (() => { try { return require('trace_events'); } catch { return null; } })();
+const sqlite = (() => { try { return process.getBuiltinModule ? process.getBuiltinModule('node:sqlite') : require('node:sqlite'); } catch { return null; } })();
+const httpClient = (() => { try { return require('_http_client'); } catch { return null; } })();
+const httpAgent = (() => { try { return require('_http_agent'); } catch { return null; } })();
+const tlsWrap = (() => { try { return require('_tls_wrap'); } catch { return null; } })();
 
 const JAIL_ROOT = fs.realpathSync(${JSON.stringify(ephemeralDir)});
 
@@ -269,6 +309,34 @@ for (const method of ['symlinkSync', 'symlink', 'linkSync', 'link']) {
   }
 }
 
+// 3b. Jail Node 22 fs.globSync and fs.glob against pattern / cwd escapes
+function assertJailedGlobArgs(opLabel, pattern, options) {
+  const patterns = Array.isArray(pattern) ? pattern : [pattern];
+  for (const pat of patterns) {
+    assertJailedPath(opLabel, pat);
+  }
+  if (options && typeof options === 'object' && options.cwd !== undefined) {
+    assertJailedPath(opLabel + '(cwd)', options.cwd);
+  }
+}
+
+if (typeof fs.globSync === 'function') {
+  const origGlobSync = fs.globSync.bind(fs);
+  lockProperty(fs, 'globSync', function patchedGlobSync(pattern, options) {
+    assertJailedGlobArgs('fs.globSync', pattern, options);
+    return origGlobSync(pattern, options);
+  });
+}
+
+if (typeof fs.glob === 'function') {
+  const origGlob = fs.glob.bind(fs);
+  lockProperty(fs, 'glob', function patchedGlob(pattern, options, cb) {
+    const opts = typeof options === 'function' ? undefined : options;
+    assertJailedGlobArgs('fs.glob', pattern, opts);
+    return origGlob(pattern, options, cb);
+  });
+}
+
 // 4. Patch and lock fs.promises (which is identical to require('fs/promises') and import('node:fs/promises'))
 if (fsPromises) {
   const promiseSinglePath = [
@@ -313,10 +381,50 @@ if (fsPromises) {
       lockProperty(fsPromises, method, blocked);
     }
   }
+
+  if (typeof fsPromises.glob === 'function') {
+    const origPromiseGlob = fsPromises.glob.bind(fsPromises);
+    lockProperty(fsPromises, 'glob', async function* patchedPromiseGlob(pattern, options) {
+      assertJailedGlobArgs('fs.promises.glob', pattern, options);
+      yield* origPromiseGlob(pattern, options);
+    });
+  }
 }
 
-// 5. Lock process.chdir, process.kill, process.binding, process._linkedBinding, process.dlopen
-// on both process and Object.getPrototypeOf(process) so delete process.binding cannot bypass!
+// 5. Lock process.chdir, process.kill, process.binding, process._linkedBinding, process.dlopen,
+// process.getBuiltinModule, process.loadEnvFile, and process.report on both process and Object.getPrototypeOf(process)
+const FORBIDDEN_MODULES = new Set([
+  'child_process', 'node:child_process',
+  'worker_threads', 'node:worker_threads',
+  'cluster', 'node:cluster',
+  'dgram', 'node:dgram',
+  'net', 'node:net',
+  'tls', 'node:tls',
+  '_tls_common', 'node:_tls_common',
+  '_tls_wrap', 'node:_tls_wrap',
+  'http', 'node:http',
+  'https', 'node:https',
+  'http2', 'node:http2',
+  '_http_agent', 'node:_http_agent',
+  '_http_client', 'node:_http_client',
+  '_http_common', 'node:_http_common',
+  '_http_incoming', 'node:_http_incoming',
+  '_http_outgoing', 'node:_http_outgoing',
+  '_http_server', 'node:_http_server',
+  'dns', 'node:dns',
+  'dns/promises', 'node:dns/promises',
+  'inspector', 'node:inspector',
+  'inspector/promises', 'node:inspector/promises',
+  'v8', 'node:v8',
+  'vm', 'node:vm',
+  'module', 'node:module',
+  'repl', 'node:repl',
+  'wasi', 'node:wasi',
+  'sqlite', 'node:sqlite',
+  'sea', 'node:sea',
+  'trace_events', 'node:trace_events'
+]);
+
 const origChdir = process.chdir.bind(process);
 const patchedChdir = function patchedChdir(dir) {
   const safeDir = assertJailedPath('process.chdir', dir);
@@ -350,6 +458,40 @@ const blockedDlopen = function blockedDlopen() {
     'EACCES_BRZ_BINDING'
   );
 };
+const blockedLoadEnvFile = function blockedLoadEnvFile(target) {
+  throw createInterceptError(
+    'ENV_FILE_ESCAPE_BLOCKED',
+    \`op=process.loadEnvFile target=\${String(target || '.env')}\`,
+    'EACCES_BRZ_ENV'
+  );
+};
+const origGetBuiltinModule = typeof process.getBuiltinModule === 'function'
+  ? process.getBuiltinModule.bind(process)
+  : null;
+const patchedGetBuiltinModule = function patchedGetBuiltinModule(id) {
+  const normalized = String(id || '').trim();
+  const bare = normalized.replace(/^node:/, '');
+  if (FORBIDDEN_MODULES.has(normalized) || FORBIDDEN_MODULES.has(bare)) {
+    throw createInterceptError(
+      'FORBIDDEN_MODULE_BLOCKED',
+      \`op=process.getBuiltinModule(\${normalized})\`,
+      'EACCES_BRZ_MODULE'
+    );
+  }
+  return origGetBuiltinModule ? origGetBuiltinModule(id) : undefined;
+};
+
+if (process.report && typeof process.report === 'object') {
+  for (const repMethod of ['writeReport', 'getReport']) {
+    lockProperty(process.report, repMethod, function blockedProcessReport() {
+      throw createInterceptError(
+        'PROCESS_REPORT_BLOCKED',
+        \`op=process.report.\${repMethod}\`,
+        'EACCES_BRZ_REPORT'
+      );
+    }, false);
+  }
+}
 
 const processProto = Object.getPrototypeOf(process);
 for (const targetObj of [process, processProto]) {
@@ -358,6 +500,8 @@ for (const targetObj of [process, processProto]) {
   lockProperty(targetObj, 'binding', blockedBinding, false);
   lockProperty(targetObj, '_linkedBinding', blockedLinkedBinding, false);
   lockProperty(targetObj, 'dlopen', blockedDlopen, false);
+  lockProperty(targetObj, 'loadEnvFile', blockedLoadEnvFile, false);
+  lockProperty(targetObj, 'getBuiltinModule', patchedGetBuiltinModule, false);
 }
 
 // 6. Poison & lock child_process methods AND ChildProcess.prototype (blocks ESM import('node:child_process') & new cp.ChildProcess().spawn)
@@ -565,31 +709,73 @@ if (inspector) {
   }
 }
 
-// 9. Hook and lock Module._load to block forbidden dangerous/network/thread/subprocess modules
-const FORBIDDEN_MODULES = new Set([
-  'child_process', 'node:child_process',
-  'worker_threads', 'node:worker_threads',
-  'cluster', 'node:cluster',
-  'dgram', 'node:dgram',
-  'net', 'node:net',
-  'tls', 'node:tls',
-  'http', 'node:http',
-  'https', 'node:https',
-  'http2', 'node:http2',
-  'dns', 'node:dns',
-  'dns/promises', 'node:dns/promises',
-  'inspector', 'node:inspector',
-  'inspector/promises', 'node:inspector/promises',
-  'v8', 'node:v8',
-  'vm', 'node:vm',
-  'module', 'node:module',
-  'repl', 'node:repl'
-]);
+if (v8) {
+  const createV8Blocker = (label) => function blockedV8Call() {
+    throw createInterceptError('V8_ESCAPE_BLOCKED', \`api=\${label}\`, 'EACCES_BRZ_V8');
+  };
+  for (const m of ['writeHeapSnapshot', 'getHeapSnapshot', 'setFlagsFromString', 'takeCoverage', 'stopCoverage']) {
+    if (typeof v8[m] === 'function') {
+      lockProperty(v8, m, createV8Blocker('v8.' + m));
+    }
+  }
+}
 
+if (sqlite) {
+  const createSqliteBlocker = (label) => function blockedSqliteCall() {
+    throw createInterceptError('SQLITE_ESCAPE_BLOCKED', \`api=\${label}\`, 'EACCES_BRZ_SQLITE');
+  };
+  if (sqlite.DatabaseSync && sqlite.DatabaseSync.prototype) {
+    for (const m of ['open', 'exec', 'prepare', 'close']) {
+      lockProperty(sqlite.DatabaseSync.prototype, m, createSqliteBlocker('sqlite.DatabaseSync.prototype.' + m));
+    }
+  }
+  for (const m of ['DatabaseSync', 'StatementSync']) {
+    if (typeof sqlite[m] === 'function') {
+      lockProperty(sqlite, m, createSqliteBlocker('sqlite.' + m));
+    }
+  }
+}
+
+if (wasi) {
+  const createWasiBlocker = (label) => function blockedWasiCall() {
+    throw createInterceptError('WASI_ESCAPE_BLOCKED', \`api=\${label}\`, 'EACCES_BRZ_WASI');
+  };
+  if (wasi.WASI && wasi.WASI.prototype) {
+    for (const m of ['start', 'initialize', 'getImportObject']) {
+      lockProperty(wasi.WASI.prototype, m, createWasiBlocker('wasi.WASI.prototype.' + m));
+    }
+  }
+  if (typeof wasi.WASI === 'function') {
+    lockProperty(wasi, 'WASI', createWasiBlocker('wasi.WASI'));
+  }
+}
+
+if (traceEvents && typeof traceEvents.createTracing === 'function') {
+  lockProperty(traceEvents, 'createTracing', function blockedTraceEvents() {
+    throw createInterceptError('TRACE_EVENTS_BLOCKED', 'api=trace_events.createTracing', 'EACCES_BRZ_TRACE');
+  });
+}
+
+if (httpClient && typeof httpClient.ClientRequest === 'function') {
+  lockProperty(httpClient, 'ClientRequest', createNetBlocker('_http_client.ClientRequest'));
+}
+if (httpAgent && typeof httpAgent.Agent === 'function') {
+  lockProperty(httpAgent, 'Agent', createNetBlocker('_http_agent.Agent'));
+}
+if (tlsWrap) {
+  for (const m of ['connect', 'TLSSocket', 'Server']) {
+    if (typeof tlsWrap[m] === 'function') {
+      lockProperty(tlsWrap, m, createNetBlocker('_tls_wrap.' + m));
+    }
+  }
+}
+
+// 9. Hook and lock Module._load and dangerous Module static methods
 const origModuleLoad = Module._load.bind(Module);
 lockProperty(Module, '_load', function patchedModuleLoad(request, parent, isMain) {
   const normalized = String(request || '').trim();
-  if (FORBIDDEN_MODULES.has(normalized)) {
+  const bare = normalized.replace(/^node:/, '');
+  if (FORBIDDEN_MODULES.has(normalized) || FORBIDDEN_MODULES.has(bare)) {
     throw createInterceptError(
       'FORBIDDEN_MODULE_BLOCKED',
       \`module=\${normalized}\`,
@@ -598,6 +784,27 @@ lockProperty(Module, '_load', function patchedModuleLoad(request, parent, isMain
   }
   return origModuleLoad(request, parent, isMain);
 }, false);
+
+for (const modMethod of ['register', 'registerHooks', 'enableCompileCache', 'flushCompileCache', 'createRequire']) {
+  if (typeof Module[modMethod] === 'function') {
+    lockProperty(Module, modMethod, function blockedModuleStatic() {
+      throw createInterceptError(
+        'FORBIDDEN_MODULE_BLOCKED',
+        \`api=Module.\${modMethod}\`,
+        'EACCES_BRZ_MODULE'
+      );
+    }, false);
+  }
+}
+
+// Synchronize all patched CJS built-in exports with live ESM node:* namespaces
+if (typeof Module.syncBuiltinESMExports === 'function') {
+  try {
+    Module.syncBuiltinESMExports();
+  } catch {
+    // Ignore if unsupported
+  }
+}
 
 // 10. Block outbound global network APIs (fetch / WebSocket)
 lockProperty(globalThis, 'fetch', async function blockedFetch(targetUrl) {

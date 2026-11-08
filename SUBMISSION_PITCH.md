@@ -4,6 +4,16 @@
 
 ## 1. Ready-to-Paste LabLab Submission Portal Fields
 
+### Public GitHub Repository URL
+```text
+https://github.com/romanfjose/VultrBlastRadiusZero
+```
+
+### Live Deployed Application URL (Vultr Cloud Compute EWR)
+```text
+http://66.135.18.157:4680
+```
+
 ### Project Title
 ```text
 BLAST RADIUS ZERO (BRZ-0): Autonomous Vultr Inference Agent & Containment Cockpit

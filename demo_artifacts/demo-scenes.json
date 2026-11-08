@@ -1,0 +1,82 @@
+{
+  "appUrl": "http://127.0.0.1:4680",
+  "recordedAt": "2026-11-08T16:37:42.409Z",
+  "scenes": [
+    {
+      "id": "scene-01-pattern-a",
+      "stepBadge": "SCENE 1 / 4 · PATTERN A SELF-HEALING",
+      "title": "Autonomous Crash Recovery Across Ephemeral Sandboxes",
+      "subtitle": "Sandbox #1 catches TypeError -> Vultr Qwen2.5-Coder patches code -> Sandbox #2 passes with 0.00% Host Bleed",
+      "durationMs": 3200,
+      "actions": [
+        {
+          "type": "click",
+          "selector": "[data-attempt=\"0\"], .attempt-tab:first-child",
+          "waitAfterMs": 1100
+        },
+        {
+          "type": "click",
+          "selector": "[data-attempt=\"1\"], .attempt-tab:nth-child(2)",
+          "waitAfterMs": 1200
+        }
+      ]
+    },
+    {
+      "id": "scene-02-redteam-gauntlet",
+      "stepBadge": "SCENE 2 / 4 · LIVE CONTAINMENT MOMENT",
+      "title": "1-Click 4-Pillar Red-Team Exploit Gauntlet",
+      "subtitle": "Firing live Env Exfil, rm -rf .. Escape, and Infinite Loop Bomb -> 4/4 Jailed & SIGKILL Contained",
+      "durationMs": 4200,
+      "actions": [
+        {
+          "type": "click",
+          "selector": "#btn-run-gauntlet",
+          "waitAfterMs": 2200
+        },
+        {
+          "type": "click",
+          "selector": "[data-strike=\"0\"], .attempt-tab:first-child",
+          "waitAfterMs": 900
+        },
+        {
+          "type": "click",
+          "selector": "[data-strike=\"2\"], .attempt-tab:nth-child(3)",
+          "waitAfterMs": 900
+        }
+      ]
+    },
+    {
+      "id": "scene-03-pattern-b-dom-gate",
+      "stepBadge": "SCENE 3 / 4 · PATTERN B DOM QUARANTINE",
+      "title": "Hostile Web/DOM Prompt Injection & Human Approval Gate",
+      "subtitle": "Strips hidden CSS/Script exfiltration traps and freezes port-22 mutation until Human Rejects",
+      "durationMs": 3800,
+      "actions": [
+        {
+          "type": "click",
+          "selector": "[data-scenario=\"pattern-b-dom\"], #btn-scenario-b",
+          "waitAfterMs": 1800
+        },
+        {
+          "type": "click",
+          "selector": "#btn-gate-reject",
+          "waitAfterMs": 1200
+        }
+      ]
+    },
+    {
+      "id": "scene-04-sha256-receipt",
+      "stepBadge": "SCENE 4 / 4 · CRYPTOGRAPHIC PROOF",
+      "title": "64-Hex SHA-256 Ephemeral Teardown Receipt",
+      "subtitle": "Every sandbox directory is wiped via fs.rmSync and verified fs.existsSync === false",
+      "durationMs": 2600,
+      "actions": [
+        {
+          "type": "click",
+          "selector": "#btn-copy-receipt",
+          "waitAfterMs": 1400
+        }
+      ]
+    }
+  ]
+}

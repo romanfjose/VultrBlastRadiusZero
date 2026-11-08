@@ -538,3 +538,153 @@ test('Anti-Spoof Fix #2: Live Vultr Cloud Inference calls fetch() across all mis
     globalThis.fetch = originalFetch;
   }
 });
+
+test('Morning-After Pipeline 04 Hardening: Blocks Node 22 process.getBuiltinModule, node:sqlite, process.report, process.loadEnvFile, v8 heap dump, WASI, glob escapes, and verifies /api/config/key live contract', async () => {
+  const node22EscapeProbe = `
+    const fs = require('fs');
+    const fsPromises = require('fs/promises');
+
+    (async () => {
+      const results = {};
+
+      // 1. process.getBuiltinModule('v8')
+      try {
+        process.getBuiltinModule('v8');
+        results.getBuiltinModuleV8 = 'ESCAPED';
+      } catch (e) {
+        results.getBuiltinModuleV8 = e.message.includes('CONTAINMENT_INTERCEPT') ? 'BLOCKED' : 'OTHER';
+      }
+
+      // 2. fs.globSync('../*') & fs.promises.glob('../*')
+      try {
+        if (fs.globSync) {
+          fs.globSync('../*');
+          results.globSync = 'ESCAPED';
+        } else {
+          results.globSync = 'BLOCKED';
+        }
+      } catch (e) {
+        results.globSync = e.message.includes('CONTAINMENT_INTERCEPT') ? 'BLOCKED' : 'OTHER';
+      }
+
+      try {
+        if (fsPromises.glob) {
+          for await (const _ of fsPromises.glob('../*')) {}
+          results.promisesGlob = 'ESCAPED';
+        } else {
+          results.promisesGlob = 'BLOCKED';
+        }
+      } catch (e) {
+        results.promisesGlob = e.message.includes('CONTAINMENT_INTERCEPT') ? 'BLOCKED' : 'OTHER';
+      }
+
+      // 3. process.report.writeReport('../leak.json')
+      try {
+        process.report.writeReport('../leak.json');
+        results.processReport = 'ESCAPED';
+      } catch (e) {
+        results.processReport = e.message.includes('CONTAINMENT_INTERCEPT') ? 'BLOCKED' : 'OTHER';
+      }
+
+      // 4. process.loadEnvFile('../.env')
+      try {
+        process.loadEnvFile('../.env');
+        results.processLoadEnvFile = 'ESCAPED';
+      } catch (e) {
+        results.processLoadEnvFile = e.message.includes('CONTAINMENT_INTERCEPT') ? 'BLOCKED' : 'OTHER';
+      }
+
+      // 5. ESM import('node:v8').writeHeapSnapshot('../heap.heapsnapshot')
+      try {
+        const v8Mod = await import('node:v8');
+        v8Mod.writeHeapSnapshot('../heap.heapsnapshot');
+        results.esmV8Heap = 'ESCAPED';
+      } catch (e) {
+        results.esmV8Heap = e.message.includes('CONTAINMENT_INTERCEPT') ? 'BLOCKED' : 'OTHER';
+      }
+
+      // 6. ESM import('node:sqlite').DatabaseSync('../escape.sqlite')
+      try {
+        const sqlite = await import('node:sqlite');
+        new sqlite.DatabaseSync('../escape.sqlite');
+        results.esmSqlite = 'ESCAPED';
+      } catch (e) {
+        results.esmSqlite = e.message.includes('CONTAINMENT_INTERCEPT') ? 'BLOCKED' : 'OTHER';
+      }
+
+      // 7. ESM import('node:wasi').WASI
+      try {
+        const wasi = await import('node:wasi');
+        new wasi.WASI({ version: 'preview1', preopens: { '/': '/' } });
+        results.esmWasi = 'ESCAPED';
+      } catch (e) {
+        results.esmWasi = e.message.includes('CONTAINMENT_INTERCEPT') ? 'BLOCKED' : 'OTHER';
+      }
+
+      // 8. ESM import('node:module').createRequire('../server.js')
+      try {
+        const mod = await import('node:module');
+        mod.createRequire('../server.js');
+        results.esmModuleCreateRequire = 'ESCAPED';
+      } catch (e) {
+        results.esmModuleCreateRequire = e.message.includes('CONTAINMENT_INTERCEPT') ? 'BLOCKED' : 'OTHER';
+      }
+
+      console.log(JSON.stringify(results));
+    })();
+  `;
+
+  const sandboxRes = await executeInEphemeralSandbox({
+    code: node22EscapeProbe,
+    timeoutMs: 3000,
+    missionLabel: 'unit-test:pipeline04-node22-hardening'
+  });
+
+  assert.equal(sandboxRes.ok, true);
+  const checks = JSON.parse(sandboxRes.stdout);
+  assert.equal(checks.getBuiltinModuleV8, 'BLOCKED');
+  assert.equal(checks.globSync, 'BLOCKED');
+  assert.equal(checks.promisesGlob, 'BLOCKED');
+  assert.equal(checks.processReport, 'BLOCKED');
+  assert.equal(checks.processLoadEnvFile, 'BLOCKED');
+  assert.equal(checks.esmV8Heap, 'BLOCKED');
+  assert.equal(checks.esmSqlite, 'BLOCKED');
+  assert.equal(checks.esmWasi, 'BLOCKED');
+  assert.equal(checks.esmModuleCreateRequire, 'BLOCKED');
+
+  // Verify /api/config/key returns top-level liveKeyConfigured and updates defaultModel
+  const server = createAppServer();
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+  const { port } = server.address();
+  const baseUrl = `http://127.0.0.1:${port}`;
+
+  try {
+    const cfgRes = await fetch(`${baseUrl}/api/config/key`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        apiKey: 'vltr_live_test_key_pipeline04_9999',
+        model: 'deepseek-r1'
+      })
+    });
+    assert.equal(cfgRes.status, 200);
+    const cfgData = await cfgRes.json();
+    assert.equal(cfgData.ok, true);
+    assert.equal(cfgData.liveKeyConfigured, true);
+    assert.equal(cfgData.defaultModel, 'deepseek-r1');
+    assert.equal(cfgData.vultrInference.liveKeyConfigured, true);
+    assert.equal(cfgData.vultrInference.defaultModel, 'deepseek-r1');
+
+    // Reset runtime key back to empty after test
+    await fetch(`${baseUrl}/api/config/key`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        apiKey: '',
+        model: 'qwen2.5-coder-32b-instruct'
+      })
+    });
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+});

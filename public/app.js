@@ -817,7 +817,7 @@ while (true) {
         const res = await fetch('/api/config/key', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ apiKey })
+          body: JSON.stringify({ apiKey, model: state.selectedModel })
         });
         const data = await res.json();
         if (data.vultrInference) {
@@ -827,8 +827,10 @@ while (true) {
             ledgerSummary: { hostBleedPercent: 0 }
           });
         }
-        el.configSaveFeedback.textContent = data.liveKeyConfigured
-          ? `✓ Live Vultr Key Armed (${data.maskedKey}) — Scrubbed from child sandboxes`
+        const isLive = Boolean(data.liveKeyConfigured || data.vultrInference?.liveKeyConfigured);
+        const masked = data.maskedKey || data.vultrInference?.maskedKey || '';
+        el.configSaveFeedback.textContent = isLive
+          ? `✓ Live Vultr Key Armed (${masked}) — Scrubbed from child sandboxes`
           : '✓ Deterministic Vultr Inference Twin Active — Zero keys in child env';
         setTimeout(() => {
           el.modalConfigKey.classList.add('hidden');

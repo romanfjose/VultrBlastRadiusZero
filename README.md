@@ -5,10 +5,11 @@
 | Metric / Verification Gate | Measured Ground Truth |
 | :--- | :--- |
 | **Inference Engine** | **Vultr Serverless Inference** (`POST https://api.vultrinference.com/v1/chat/completions`) |
-| **Supported Models** | `qwen2.5-coder-32b-instruct` (Default), `deepseek-r1`, `llama-3.3-70b-instruct` |
+| **Supported Models** | `deepseek-v4.1-flash-1017` (Default), `qwen3.8-flash-next`, `qwen3.8-27b`, `glm-5.3-flash` |
+| **Live Vultr Cloud Compute Demo** | **`http://66.135.18.157:4680`** (Vultr EWR `vc2-1c-1gb` Ubuntu 24.04 LTS) |
 | **Containment Architecture** | Dual-Engine Ephemeral Sandbox (`Docker --network none --read-only` + OS Child-Process Kernel/V8 Jail) |
 | **Host Secret Bleed** | **`0.00%`** (`VULTR_INFERENCE_API_KEY` & `HOST_MASTER_SECRET` scrubbed prior to `spawn()`) |
-| **Automated Containment Suite** | **`10/10` Test Suites Passing** (`test/containment.test.js`) + **`20/20` Red-Team Exploit Vectors Blocked** |
+| **Automated Containment Suite** | **`11/11` Test Suites Passing** (`test/containment.test.js`) + **`25/25` Red-Team Exploit Vectors Blocked** |
 | **External `npm` Dependencies** | **`0`** (100% native Node.js `v22+` stdlib — boots in `< 300ms`) |
 | **License** | MIT (`LICENSE`) |
 

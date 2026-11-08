@@ -218,7 +218,7 @@ function createAppServer() {
 
       if (req.method === 'POST' && pathname === '/api/config/key') {
         const body = await readJsonBody(req);
-        const status = setRuntimeApiKey(body.apiKey || '');
+        const status = setRuntimeApiKey(body.apiKey || '', body.model);
         sendJson(res, 200, {
           ok: true,
           ...status,
