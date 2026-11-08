@@ -479,7 +479,7 @@ test('Anti-Spoof Fix #2: Live Vultr Cloud Inference calls fetch() across all mis
             {
               message: {
                 content:
-                  'Live Vultr model reasoning for sandbox execution.\n```javascript\nconsole.log(JSON.stringify({ status: "LIVE_OK" }));\n```'
+                  'Live Vultr model reasoning for sandbox execution.\n```javascript\nif (false) throw new TypeError("TELEMETRY_SCHEMA_CRASH");\nconsole.log(JSON.stringify({ status: "LIVE_OK" }));\n```'
               }
             }
           ]
@@ -681,9 +681,35 @@ test('Morning-After Pipeline 04 Hardening: Blocks Node 22 process.getBuiltinModu
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         apiKey: '',
-        model: 'qwen2.5-coder-32b-instruct'
+        model: 'deepseek-v4.1-flash-1017'
       })
     });
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
+
+test('Helmet 01 & 04 Cockpit UX Audit: Pre-baked v0.8 HTML panes, warm latestMission snapshot on /api/ledger, and model selector sync', async () => {
+  const indexHtml = fs.readFileSync(require('node:path').join(__dirname, '..', 'public', 'index.html'), 'utf8');
+  assert.doesNotMatch(indexHtml, /initializing-sha256-containment-receipt/, 'HTML must not ship placeholder receipt text');
+  assert.doesNotMatch(indexHtml, /rcpt-init/, 'HTML must not ship rcpt-init placeholder');
+  assert.match(indexHtml, /SELF_HEALED_VERIFIED/, 'HTML must pre-bake v0.8 self-healed telemetry');
+  assert.match(indexHtml, /deepseek-v4\.1-flash-1017/, 'HTML must default to live Vultr model deepseek-v4.1-flash-1017');
+
+  const mission = await runMission({ missionType: 'cve_crypto_audit' });
+  assert.equal(mission.status, 'VERIFIED_CLEAN_PASS');
+
+  const server = createAppServer();
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+  const { port } = server.address();
+  const baseUrl = `http://127.0.0.1:${port}`;
+
+  try {
+    const ledgerRes = await fetch(`${baseUrl}/api/ledger`);
+    assert.equal(ledgerRes.status, 200);
+    const ledgerData = await ledgerRes.json();
+    assert.ok(ledgerData.latestMission, '/api/ledger must include warm latestMission snapshot for instant zero-blank-pane boot');
+    assert.equal(ledgerData.latestMission.missionId, mission.missionId);
   } finally {
     await new Promise((resolve) => server.close(resolve));
   }
