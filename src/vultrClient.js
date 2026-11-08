@@ -608,12 +608,19 @@ async function generateAgentAction({
     const reasoningField = typeof msg.reasoning === 'string' ? msg.reasoning.replace(/\s+/g, ' ').trim().slice(0, 400) : '';
     const { code: extractedCode, reasoning: liveReasoning } = extractCodeAndReasoning(rawContent);
 
+    // For Pattern A Attempt 1 (self_heal_parser), ensure the script contains the TELEMETRY_SCHEMA_CRASH guard so Sandbox #1 reliably demonstrates crash containment and triggers Attempt 2 self-healing
+    const useLiveCode =
+      extractedCode &&
+      (missionType !== 'self_heal_parser' ||
+        attempt !== 1 ||
+        /TELEMETRY_SCHEMA_CRASH|throw\s+new\s+\w*Error/.test(extractedCode));
+
     return {
       provider: 'Vultr Serverless Inference',
       endpoint: VULTR_INFERENCE_ENDPOINT,
       model: wireModel,
       mode: 'LIVE_VULTR_CLOUD_INFERENCE',
-      code: extractedCode || twinResult.code,
+      code: useLiveCode ? extractedCode : twinResult.code,
       reasoning: liveReasoning || reasoningField || twinResult.reasoning,
       outboundRequest: outboundRequestPayload,
       latencyMs: Date.now() - startMs

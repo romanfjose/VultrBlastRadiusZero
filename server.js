@@ -255,6 +255,8 @@ if (require.main === module) {
     console.log(
       `[BRZ-0 ENGINE ROOM ONLINE] Listening on http://localhost:${DEFAULT_PORT} (Host PID=${process.pid})`
     );
+    // Pre-warm initial Pattern A Self-Healing Parser mission so the cockpit renders 100% populated in <50ms on first load
+    runMission({ missionType: 'self_heal_parser' }).catch(() => {});
   });
 }
 

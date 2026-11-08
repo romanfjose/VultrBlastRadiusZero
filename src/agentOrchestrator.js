@@ -26,6 +26,7 @@ const VALID_MISSION_TYPES = new Set([
 
 const ledger = [];
 const approvalGates = new Map();
+let latestMissionSnapshot = null;
 
 const DEFAULT_HOSTILE_DOM_HTML = `<!DOCTYPE html>
 <html lang="en">
@@ -217,7 +218,7 @@ async function runMission({
       receipt: sandboxRun.receipt
     });
 
-    return {
+    const domMissionObj = {
       missionId,
       pattern: 'PATTERN_B_UNTRUSTED_DOM',
       missionType,
@@ -233,6 +234,8 @@ async function runMission({
       finalOutput: parsedOutput,
       latestReceipt: sandboxRun.receipt
     };
+    latestMissionSnapshot = domMissionObj;
+    return domMissionObj;
   }
 
   // Pattern A: Autonomous Code Execution + Self-Healing Loop
@@ -336,7 +339,7 @@ async function runMission({
       receipt: sandboxAttempt2.receipt
     });
 
-    return {
+    const healedMissionObj = {
       missionId,
       pattern: 'PATTERN_A_UNTRUSTED_CODE',
       missionType,
@@ -351,9 +354,11 @@ async function runMission({
       finalOutput: attempt2Parsed || { rawStdout: sandboxAttempt2.stdout },
       latestReceipt: sandboxAttempt2.receipt
     };
+    latestMissionSnapshot = healedMissionObj;
+    return healedMissionObj;
   }
 
-  return {
+  const cleanMissionObj = {
     missionId,
     pattern: 'PATTERN_A_UNTRUSTED_CODE',
     missionType,
@@ -368,6 +373,8 @@ async function runMission({
     finalOutput: attempt1Record.execution.parsedOutput || { rawStdout: sandboxAttempt1.stdout },
     latestReceipt: sandboxAttempt1.receipt
   };
+  latestMissionSnapshot = cleanMissionObj;
+  return cleanMissionObj;
 }
 
 /**
@@ -705,6 +712,7 @@ function getLedgerSnapshot() {
     ZeroHostBleedVerified: ledger.every((item) =>
       item.receipt ? item.receipt.hostBleedPercent === 0 : true
     ),
+    latestMission: latestMissionSnapshot,
     pendingApprovalGates: Array.from(approvalGates.values()).filter(
       (g) => g.status === 'PENDING_APPROVAL'
     ),
