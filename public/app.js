@@ -1,12 +1,8 @@
 /**
  * BLAST RADIUS ZERO (BRZ-0) — Frontend Tactical Containment Cockpit (Helmet 01)
- * Zero-dependency browser controller wired to real backend endpoints on Port 4680:
- *  - GET  /api/health
- *  - GET  /api/ledger
- *  - POST /api/agent/mission
- *  - POST /api/redteam/strike
- *  - POST /api/agent/approve
- *  - POST /api/config/key
+ * Dual-Theme Executive Edition:
+ *  - Default Theme: Warm Sandstone & Espresso (`data-theme="warm"`)
+ *  - Dark Theme:    Obsidian Slate, Violet & Neon Emerald (`data-theme="dark"`)
  */
 
 (function () {
@@ -78,7 +74,7 @@ while (true) {
 
   const FRIENDLY_NAMES = {
     self_heal_parser: 'Self-Healing Code Agent',
-    cve_crypto_audit: 'Zero-Trust Package Audit',
+    cve_crypto_audit: 'Zero-Trust Package Auditor',
     hostile_dom_audit: 'Poisoned Webpage Quarantine',
     custom_code: 'Custom Untrusted JS Run',
     exfil_secrets: 'Attack 1: Steal API Keys (../)',
@@ -89,10 +85,11 @@ while (true) {
   };
 
   const state = {
+    theme: 'warm',
     selectedModel: 'deepseek-v4.1-flash-1017',
     vultrStatus: null,
     sandboxStatus: null,
-    activeMode: 'mission', // 'mission' | 'strike' | 'gauntlet'
+    activeMode: 'mission',
     activeData: null,
     activeTabIndex: 0,
     showOutboundPayload: false,
@@ -102,7 +99,6 @@ while (true) {
     busy: false
   };
 
-  // DOM Cache
   const el = {};
 
   function cacheElements() {
@@ -114,6 +110,10 @@ while (true) {
     el.pillar2Detail = document.getElementById('pillar-2-detail');
     el.pillar3Detail = document.getElementById('pillar-3-detail');
     el.pillar4Detail = document.getElementById('pillar-4-detail');
+
+    el.btnThemeToggle = document.getElementById('btn-theme-toggle');
+    el.themeToggleIcon = document.getElementById('theme-toggle-icon');
+    el.themeToggleLabel = document.getElementById('theme-toggle-label');
 
     el.hostBleedBadge = document.getElementById('host-bleed-badge');
     el.inferenceModeBadge = document.getElementById('inference-mode-badge');
@@ -192,6 +192,22 @@ while (true) {
     el.ledgerTbody = document.getElementById('ledger-tbody');
   }
 
+  function applyTheme(themeName) {
+    state.theme = themeName === 'dark' ? 'dark' : 'warm';
+    document.documentElement.setAttribute('data-theme', state.theme);
+    if (el.themeToggleIcon) {
+      el.themeToggleIcon.innerHTML = state.theme === 'dark' ? '&#9790;' : '&#9728;';
+    }
+    if (el.themeToggleLabel) {
+      el.themeToggleLabel.textContent = state.theme === 'dark' ? 'Dark Theme' : 'Warm Theme';
+    }
+    try {
+      localStorage.setItem('brz_theme', state.theme);
+    } catch {
+      // ignore storage errors
+    }
+  }
+
   function escapeHtml(str) {
     return String(str ?? '')
       .replace(/&/g, '&amp;')
@@ -232,9 +248,6 @@ while (true) {
     const bleed = health.ledgerSummary?.hostBleedPercent ?? 0;
     el.hostBleedBadge.textContent = `${Number(bleed).toFixed(2)}% HOST BLEED`;
 
-    const modeLabel = health.vultrInference?.liveKeyConfigured
-      ? 'LIVE VULTR API'
-      : 'DETERMINISTIC TWIN';
     if (health.vultrInference?.defaultModel && !state.userSelectedModel) {
       state.selectedModel = health.vultrInference.defaultModel;
       if (el.selectVultrModel) {
@@ -245,12 +258,7 @@ while (true) {
       '-instruct',
       ''
     );
-    el.inferenceModeBadge.textContent = `${shortModel} • ${modeLabel}`;
-
-    if (health.sandboxRuntime?.hostPid) {
-      el.pillar1Detail.textContent = `Isolated Child PID`;
-      el.pillar3Detail.textContent = `${health.sandboxRuntime.memoryCapMb}MB Cap • 1.5s Kill`;
-    }
+    el.inferenceModeBadge.textContent = `${shortModel}  ▾`;
   }
 
   async function refreshHealthAndLedger() {
@@ -277,7 +285,6 @@ while (true) {
           }
         }
 
-        // If no activeGate is currently loaded, surface any pending gate
         if (!state.activeGate && Array.isArray(ledgerData.pendingApprovalGates) && ledgerData.pendingApprovalGates.length > 0) {
           renderApprovalGate(ledgerData.pendingApprovalGates[0]);
         }
@@ -298,9 +305,9 @@ while (true) {
       ephemeralDestroyed: true
     };
 
-    el.proofProcessIsolated.innerHTML = `<span class="proof-check">${proofs.processIsolated ? '&#10003;' : '&#10005;'}</span><div class="proof-text"><strong>Pillar 1: Process Isolation</strong><span>Child PID ${receipt.pid ?? '--'} &ne; Host PID ${receipt.hostPid ?? '--'}</span></div>`;
-    el.proofSecretsScrubbed.innerHTML = `<span class="proof-check">${proofs.secretsScrubbed ? '&#10003;' : '&#10005;'}</span><div class="proof-text"><strong>Pillar 2: Secret Hygiene</strong><span>${proofs.hostSecretsExposedCount ?? 0} API Keys Exposed to Sandbox</span></div>`;
-    el.proofResourceCapped.innerHTML = `<span class="proof-check">${proofs.resourceCapped ? '&#10003;' : '&#10005;'}</span><div class="proof-text"><strong>Pillar 3: Resource Limits</strong><span>${receipt.memoryCapMb || 64} MB Cap &bull; ${receipt.durationMs ?? 0}ms / ${receipt.timeoutMs || 1500}ms</span></div>`;
+    el.proofProcessIsolated.innerHTML = `<span class="proof-check">${proofs.processIsolated ? '&#10003;' : '&#10005;'}</span><div class="proof-text"><strong>Pillar 1: Process Isolation</strong><span>Child PID ${receipt.pid ?? '--'} / Host PID ${receipt.hostPid ?? '--'}</span></div>`;
+    el.proofSecretsScrubbed.innerHTML = `<span class="proof-check">${proofs.secretsScrubbed ? '&#10003;' : '&#10005;'}</span><div class="proof-text"><strong>Pillar 2: Secret Hygiene</strong><span>${proofs.hostSecretsExposedCount ?? 0} Keys Exposed to Sandbox</span></div>`;
+    el.proofResourceCapped.innerHTML = `<span class="proof-check">${proofs.resourceCapped ? '&#10003;' : '&#10005;'}</span><div class="proof-text"><strong>Pillar 3: Resource Limits</strong><span>${receipt.memoryCapMb || 64} MB Cap &ndash; ${receipt.durationMs ?? 0}ms / ${receipt.timeoutMs || 1500}ms</span></div>`;
     el.proofEphemeralDestroyed.innerHTML = `<span class="proof-check">${proofs.ephemeralDestroyed ? '&#10003;' : '&#10005;'}</span><div class="proof-text"><strong>Pillar 4: Ephemeral Wipe</strong><span>Temp Folder Deleted (exists = false)</span></div>`;
 
     el.rcptId.textContent = receipt.receiptId || '--';
@@ -319,16 +326,10 @@ while (true) {
     el.rcptEnvKeys.textContent = envKeys;
     el.receiptSha256.textContent = receipt.sha256 || '--';
 
-    // Update top HUD pillar details cleanly without truncation
     el.pillar1Detail.textContent = `PID ${receipt.pid} Isolated`;
     el.pillar2Detail.textContent = `0 Keys in Sandbox`;
     el.pillar3Detail.textContent = `${receipt.memoryCapMb || 64}MB Cap • ${receipt.durationMs}ms`;
     el.pillar4Detail.textContent = `Temp Folder Deleted`;
-
-    // Update 4-Stage Pipeline Stepper with clean human sub-labels
-    el.step2Sub.textContent = `PID ${receipt.pid} • 0 Secrets`;
-    el.step3Sub.textContent = `Exit ${receipt.exitCode}${receipt.signal ? ' (' + receipt.signal + ')' : ''} • ${receipt.durationMs}ms`;
-    el.step4Sub.textContent = `Temp Dir Wiped Clean`;
   }
 
   function renderApprovalGate(gate) {
@@ -373,14 +374,14 @@ while (true) {
     const threats = Array.isArray(gate.threatVectorsBlocked) ? gate.threatVectorsBlocked : [];
     if (threats.length > 0) {
       el.gateThreatsList.innerHTML = threats
-        .slice(0, 3)
+        .slice(0, 2)
         .map((t) => {
           const vectorLabel = t.vectorType || t.type || 'THREAT_BLOCKED';
           const payloadLabel =
             t.quarantinedPayload || t.evidence || t.detail || 'Blocked inside sandbox';
           return `<div class="threat-item">&#9888; <strong>${escapeHtml(
             vectorLabel
-          )}:</strong> ${escapeHtml(String(payloadLabel).slice(0, 95))}</div>`;
+          )}:</strong> ${escapeHtml(String(payloadLabel).slice(0, 80))}</div>`;
         })
         .join('');
     } else {
@@ -395,10 +396,10 @@ while (true) {
     const parsed = attempt.execution?.parsedOutput || {};
     if (!passed) {
       return `<div class="human-digest-card digest-amber">
-        <div class="digest-title">&#9888; Crash Contained Inside Sandbox #${attempt.attemptNumber} (0% Host Impact)</div>
+        <div class="digest-title">&#9888; Crash Contained Inside Sandbox #${attempt.attemptNumber}</div>
         <div class="digest-metrics">
           <span class="digest-chip">Fault: Runtime TypeError on Bad Data</span>
-          <span class="digest-chip">Host Process Untouched</span>
+          <span class="digest-chip">Host Process Untouched (0% Bleed)</span>
           <span class="digest-chip">Sandbox #${attempt.attemptNumber} Wiped Clean</span>
         </div>
       </div>`;
@@ -408,7 +409,7 @@ while (true) {
       const threatsCount = (parsed.threatVectorsBlocked || mission.threatVectorsBlocked || []).length || 3;
       const cleanCount = (parsed.cleanInvoices || []).length || 2;
       return `<div class="human-digest-card digest-amber">
-        <div class="digest-title">&#128737; Poisoned Webpage Sanitized in Sandbox &bull; Payout Frozen</div>
+        <div class="digest-title">&#128737; Poisoned Webpage Sanitized in Sandbox</div>
         <div class="digest-metrics">
           <span class="digest-chip">${threatsCount} Hidden Attacks Stripped</span>
           <span class="digest-chip">${cleanCount} Safe Invoices Extracted</span>
@@ -428,12 +429,12 @@ while (true) {
       </div>`;
     }
 
-    if (parsed.packagesAudited !== undefined || parsed.criticalCvesQuarantined !== undefined) {
+    if (parsed.packagesAudited !== undefined || parsed.criticalCvesQuarantined !== undefined || parsed.totalPackages !== undefined) {
       return `<div class="human-digest-card digest-emerald">
         <div class="digest-title">&#10003; Zero-Trust Package &amp; Crypto Audit Complete</div>
         <div class="digest-metrics">
-          <span class="digest-chip">${parsed.packagesAudited ?? 4} Packages Audited</span>
-          <span class="digest-chip">${parsed.criticalCvesQuarantined ?? 1} Vulnerable Package Flagged</span>
+          <span class="digest-chip">${parsed.totalPackages ?? 4} Packages Audited</span>
+          <span class="digest-chip">${parsed.quarantinedPackages ?? 2} Vulnerable Packages Flagged</span>
           <span class="digest-chip">0 Secrets Exposed</span>
         </div>
       </div>`;
@@ -456,7 +457,6 @@ while (true) {
 
     state.activeTabIndex = attemptIndex;
 
-    // Update tab active states
     const tabButtons = el.attemptTabs.querySelectorAll('.attempt-tab');
     tabButtons.forEach((btn, idx) => {
       btn.classList.toggle('active', idx === attemptIndex);
@@ -468,14 +468,9 @@ while (true) {
     const receipt = attempt.receipt || mission.latestReceipt;
 
     const shortModel = (inf.model || 'deepseek-v4.1-flash-1017').replace('-instruct', '');
-    el.step1Sub.textContent = `${shortModel} • Attempt #${attempt.attemptNumber}`;
-    el.codePaneTitle.textContent = `Sandbox #${attempt.attemptNumber} Code (Written by Vultr AI)`;
+    el.codePaneTitle.textContent = `Sandbox #${attempt.attemptNumber} Code`;
 
-    let codeHtml = `<div class="inference-reasoning-box">
-      <strong>VULTR AI DIAGNOSIS (${escapeHtml(shortModel)}):</strong>
-      ${escapeHtml(cleanSandboxPaths(inf.reasoning || 'Generated isolated execution plan.'))}
-    </div>`;
-
+    let codeHtml = '';
     if (state.showOutboundPayload && inf.outboundRequest) {
       codeHtml += `<div class="output-block">
         <div class="output-block-label"><span>OUTBOUND VULTR API REQUEST PAYLOAD</span><span>POST /v1/chat/completions</span></div>
@@ -486,11 +481,10 @@ while (true) {
     codeHtml += `<pre class="code-pre">${escapeHtml(cleanSandboxPaths(inf.codeGenerated || '// No code generated'))}</pre>`;
     el.codeViewer.innerHTML = codeHtml;
 
-    // Right terminal pane: Human Digest + Clean Output
     const passed = Boolean(exec.ok);
     el.outputPaneDot.className = `pane-dot ${passed ? 'dot-emerald' : 'dot-amber'}`;
     el.outputExitPill.className = `exit-pill ${passed ? 'badge-emerald' : 'badge-amber'}`;
-    el.outputExitPill.textContent = `${passed ? 'PASS' : 'CRASH CONTAINED'} • ${exec.durationMs ?? 0}ms • PID ${receipt?.pid ?? '--'}`;
+    el.outputExitPill.textContent = `${passed ? 'PASS' : 'CRASH'} • ${exec.durationMs ?? 0}ms • PID ${receipt?.pid ?? '--'}`;
 
     const intercepts = receipt?.interceptsTriggered || [];
     let outHtml = buildHumanDigestForMission(mission, attempt, passed, intercepts);
@@ -504,8 +498,8 @@ while (true) {
     if (exec.stderr) {
       outHtml += `<div class="output-block">
         <div class="output-block-label">
-          <span>SANDBOX #${attempt.attemptNumber} ERROR LOG (CONTAINED IN CHILD PROCESS)</span>
-          <span>0% HOST IMPACT</span>
+          <span>SANDBOX #${attempt.attemptNumber} ERROR LOG (CONTAINED)</span>
+          <span>0% HOST BLEED</span>
         </div>
         <pre class="stderr-pre">${escapeHtml(cleanSandboxPaths(exec.stderr))}</pre>
       </div>`;
@@ -549,7 +543,7 @@ while (true) {
       : 'PATTERN A • SELF-HEALING CODE';
     el.bannerEndpointPill.textContent =
       attempts[0]?.vultrInference?.endpoint || 'https://api.vultrinference.com/v1/chat/completions';
-    el.bannerTitle.textContent = FRIENDLY_NAMES[mission.missionType] || mission.title || 'Autonomous Sandbox Mission';
+    el.bannerTitle.textContent = FRIENDLY_NAMES[mission.missionType] || mission.title || 'Self-Healing Code Agent';
     el.bannerDuration.textContent = `${mission.totalDurationMs ?? 0} ms`;
     el.bannerSandboxesCount.textContent = `${attempts.length} / ${attempts.length} Wiped`;
 
@@ -558,19 +552,13 @@ while (true) {
     }`;
     el.bannerOutcomeBadge.textContent = mission.status || 'VERIFIED';
 
-    // Build Attempt Tabs
+    // Build Stacked Attempt Rows matching the reference images
     el.attemptTabs.innerHTML = attempts
       .map((att, idx) => {
-        const isOk = Boolean(att.execution?.ok);
-        const label =
-          attempts.length > 1
-            ? idx === 0
-              ? `Attempt 1: Crash Contained (Sandbox #1 Wiped)`
-              : `Attempt 2: AI Fixed & Verified (Sandbox #2 Wiped)`
-            : `Sandbox #1: ${isPatternB ? 'Webpage Quarantined & Wiped' : 'Verified Pass & Wiped'}`;
+        const label = `Attempt ${idx + 1}: Wiped`;
         return `<button type="button" class="attempt-tab" role="tab" data-attempt-idx="${idx}">
-          <span class="tab-status-dot ${isOk ? 'dot-pass' : 'dot-fault'}"></span>
-          <span>${escapeHtml(label)}</span>
+          <span class="attempt-tab-left"><span class="attempt-chevron">&rsaquo;</span><span>${escapeHtml(label)}</span></span>
+          <span class="attempt-switch-pill"><span class="switch-knob"></span></span>
         </button>`;
       })
       .join('');
@@ -582,9 +570,8 @@ while (true) {
       });
     });
 
-    // Plain-English Story Strip
     if (isSelfHealed) {
-      el.storyComparisonStrip.innerHTML = `<strong>WHAT HAPPENED:</strong> Sandbox #1 crashed on bad data &amp; wiped itself clean &rarr; Vultr AI fixed the code &rarr; Sandbox #2 succeeded with 0% host bleed.`;
+      el.storyComparisonStrip.innerHTML = `<strong>WHAT HAPPENED:</strong> Sandbox #1 crashed on bad data &rarr; Vultr AI fixed the code &rarr; Sandbox #2 succeeded with 0% host bleed.`;
     } else if (isPatternB) {
       const threatCount = (mission.threatVectorsBlocked || []).length || 3;
       el.storyComparisonStrip.innerHTML = `<strong>WHAT HAPPENED:</strong> Sandbox #1 stripped ${threatCount} hidden prompt-injection attacks from the webpage &amp; froze the $4,820 payout for Human Approval.`;
@@ -615,7 +602,6 @@ while (true) {
     };
 
     const receipt = strike.receipt;
-    el.step1Sub.textContent = `Red-Team Attack: ${FRIENDLY_NAMES[strike.strikeType] || strike.strikeType}`;
     el.codePaneTitle.textContent = `Attack Code (${FRIENDLY_NAMES[strike.strikeType] || strike.strikeType})`;
 
     el.codeViewer.innerHTML = `<div class="inference-reasoning-box">
@@ -626,13 +612,13 @@ while (true) {
 
     el.outputPaneDot.className = 'pane-dot dot-emerald';
     el.outputExitPill.className = 'exit-pill badge-emerald';
-    el.outputExitPill.textContent = `ATTACK BLOCKED • ${
+    el.outputExitPill.textContent = `BLOCKED • ${
       receipt?.signal ? receipt.signal : 'EXIT ' + (receipt?.exitCode ?? 0)
     } • PID ${receipt?.pid ?? '--'}`;
 
     const intercepts = receipt?.interceptsTriggered || [];
     let outHtml = `<div class="human-digest-card digest-emerald">
-      <div class="digest-title">&#128737; Attack Neutralized Inside Sandbox &bull; 0.00% Host Bleed</div>
+      <div class="digest-title">&#128737; Attack Neutralized Inside Sandbox &bull; 0% Host Bleed</div>
       <div class="digest-metrics">
         <span class="digest-chip">0 Secrets Leaked</span>
         <span class="digest-chip">${intercepts.length || 1} Escape Action(s) Blocked</span>
@@ -698,10 +684,6 @@ while (true) {
     state.activeData = result;
 
     el.runBanner.className = 'run-banner status-emerald';
-    el.bannerPatternTag.textContent = isGauntlet
-      ? 'RED-TEAM GAUNTLET // ALL 4 SECURITY PILLARS TESTED'
-      : `RED-TEAM ATTACK // ${result.pillarTested || 'SANDBOX CONTAINMENT'}`;
-    el.bannerEndpointPill.textContent = 'Isolated OS Child Process + Preload Jail';
     el.bannerTitle.textContent = FRIENDLY_NAMES[result.strikeType] || result.title || 'Red-Team Chaos Strike';
     el.bannerDuration.textContent = `${result.totalDurationMs ?? result.receipt?.durationMs ?? 0} ms`;
 
@@ -714,14 +696,14 @@ while (true) {
       el.attemptTabs.innerHTML = result.strikes
         .map((st, idx) => {
           const shortLabels = [
-            '1. Steal API Keys (Blocked)',
-            '2. Run rm -rf .. (Blocked)',
-            '3. Infinite Loop (Killed)',
-            '4. Poisoned Web (Frozen)'
+            'Attack 1: Steal API Keys (Blocked)',
+            'Attack 2: Run rm -rf .. (Blocked)',
+            'Attack 3: Infinite Loop (Killed)',
+            'Attack 4: Poisoned Web (Frozen)'
           ];
           return `<button type="button" class="attempt-tab" role="tab" data-strike-idx="${idx}">
-            <span class="tab-status-dot dot-pass"></span>
-            <span>${escapeHtml(shortLabels[idx] || st.title)}</span>
+            <span class="attempt-tab-left"><span class="attempt-chevron">&rsaquo;</span><span>${escapeHtml(shortLabels[idx] || st.title)}</span></span>
+            <span class="attempt-switch-pill"><span class="switch-knob"></span></span>
           </button>`;
         })
         .join('');
@@ -748,8 +730,8 @@ while (true) {
       el.bannerOutcomeBadge.textContent = result.contained ? 'ATTACK BLOCKED (0% BLEED)' : 'BREACH';
 
       el.attemptTabs.innerHTML = `<button type="button" class="attempt-tab active" role="tab">
-        <span class="tab-status-dot dot-pass"></span>
-        <span>${escapeHtml(FRIENDLY_NAMES[result.strikeType] || result.title)} (Sandbox Wiped)</span>
+        <span class="attempt-tab-left"><span class="attempt-chevron">&rsaquo;</span><span>${escapeHtml(FRIENDLY_NAMES[result.strikeType] || result.title)} (Wiped)</span></span>
+        <span class="attempt-switch-pill"><span class="switch-knob"></span></span>
       </button>`;
 
       el.storyComparisonStrip.innerHTML = `<strong>WHAT HAPPENED:</strong> ${escapeHtml(
@@ -794,11 +776,7 @@ while (true) {
           <td>${escapeHtml(typeStr)}</td>
           <td><strong>${escapeHtml(label)}</strong></td>
           <td>${escapeHtml(pidStr)}</td>
-          <td><span class="hud-badge ${
-            String(item.status).includes('FAULT') || String(item.status).includes('PENDING')
-              ? 'badge-amber'
-              : 'badge-emerald'
-          }">${escapeHtml(item.status)}</span></td>
+          <td><span class="hud-badge">${escapeHtml(item.status)}</span></td>
           <td>${escapeHtml(durStr)}</td>
           <td>${escapeHtml(proofsStr)}</td>
           <td><code>${escapeHtml(shaShort)}</code></td>
@@ -901,6 +879,14 @@ while (true) {
   }
 
   function wireEvents() {
+    // Theme Switcher Button
+    if (el.btnThemeToggle) {
+      el.btnThemeToggle.addEventListener('click', () => {
+        const nextTheme = state.theme === 'warm' ? 'dark' : 'warm';
+        applyTheme(nextTheme);
+      });
+    }
+
     // Top HUD Config Modal
     el.btnConfigKey.addEventListener('click', () => {
       el.modalConfigKey.classList.remove('hidden');
@@ -1023,15 +1009,16 @@ while (true) {
       } catch {
         // Fallback if clipboard permission denied in headless browser
       }
-      el.btnCopyReceipt.textContent = '✓ Copied Proof';
+      el.btnCopyReceipt.textContent = '✓';
       setTimeout(() => {
-        el.btnCopyReceipt.textContent = '📋 Copy Proof';
+        el.btnCopyReceipt.textContent = '📋';
       }, 1600);
     });
   }
 
   document.addEventListener('DOMContentLoaded', async () => {
     cacheElements();
+    applyTheme('warm');
     wireEvents();
     await refreshHealthAndLedger();
     if (!state.activeData) {

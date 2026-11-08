@@ -1,6 +1,6 @@
 {
   "appUrl": "http://127.0.0.1:4680",
-  "recordedAt": "2026-11-08T20:27:38.511Z",
+  "recordedAt": "2026-11-08T21:35:08.953Z",
   "scenes": [
     {
       "id": "scene-01-pattern-a-crash",
@@ -31,12 +31,17 @@
         {
           "type": "click",
           "selector": "#btn-toggle-request",
-          "waitAfterMs": 3800
+          "waitAfterMs": 2600
         },
         {
           "type": "click",
           "selector": "#btn-toggle-request",
-          "waitAfterMs": 2600
+          "waitAfterMs": 1800
+        },
+        {
+          "type": "click",
+          "selector": "#btn-theme-toggle",
+          "waitAfterMs": 2400
         }
       ]
     },
@@ -98,12 +103,17 @@
         {
           "type": "click",
           "selector": "#btn-copy-receipt",
-          "waitAfterMs": 3200
+          "waitAfterMs": 2400
+        },
+        {
+          "type": "click",
+          "selector": "#btn-theme-toggle",
+          "waitAfterMs": 2200
         },
         {
           "type": "click",
           "selector": "#ledger-tbody tr:nth-child(2)",
-          "waitAfterMs": 2600
+          "waitAfterMs": 1800
         }
       ]
     }

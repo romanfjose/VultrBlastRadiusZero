@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="warm">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>BLAST RADIUS ZERO — Sandboxed AI Code &amp; Web Execution on Vultr</title>
+  <title>BLAST RADIUS ZERO — Sandboxed AI Code &amp; Web Execution</title>
   <link rel="stylesheet" href="/styles.css" />
 </head>
 <body>
@@ -11,59 +11,44 @@
     <!-- TOP HEADER BAR -->
     <header class="top-hud" role="banner">
       <div class="brand-cluster">
-        <div class="brand-emblem" aria-hidden="true">BRZ-0</div>
+        <div class="brand-emblem" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+        </div>
         <div class="brand-titles">
           <div class="brand-title-row">
-            <h1>BLAST RADIUS ZERO</h1>
-            <span class="brand-subtag">VULTR AGENT RUSH</span>
+            <h1>BLAST RADIUS <span class="brand-zero">ZERO</span></h1>
           </div>
-          <p class="brand-subtitle">Sandboxed AI Code &amp; Web Execution on Vultr Serverless Inference</p>
+          <p class="brand-subtitle">Sandboxed AI Code &amp; Web Execution</p>
         </div>
       </div>
 
-      <!-- 4 MANDATORY CONTAINMENT PILLARS (CLEAN STATUS STRIP) -->
-      <div class="pillars-strip" aria-label="4 Containment Pillars Live Status">
-        <div id="pillar-1" class="pillar-pill verified" title="Child process never executes in host runtime PID">
-          <span class="pillar-dot"></span>
-          <div class="pillar-meta">
-            <strong class="pillar-name">1. Process Isolation</strong>
-            <span class="pillar-detail" id="pillar-1-detail">Isolated Child PID</span>
-          </div>
-        </div>
-
-        <div id="pillar-2" class="pillar-pill verified" title="Zero host API keys or secrets exposed to sandbox env">
-          <span class="pillar-dot"></span>
-          <div class="pillar-meta">
-            <strong class="pillar-name">2. Secret Hygiene</strong>
-            <span class="pillar-detail" id="pillar-2-detail">0 Keys in Sandbox</span>
-          </div>
-        </div>
-
-        <div id="pillar-3" class="pillar-pill verified" title="Hard 64MB V8 Heap Ceiling + Watchdog SIGKILL Timeout">
-          <span class="pillar-dot"></span>
-          <div class="pillar-meta">
-            <strong class="pillar-name">3. Resource Limits</strong>
-            <span class="pillar-detail" id="pillar-3-detail">64MB Cap &bull; 1.5s Kill</span>
-          </div>
-        </div>
-
-        <div id="pillar-4" class="pillar-pill verified" title="Ephemeral workspace wiped via fs.rmSync after every single task">
-          <span class="pillar-dot"></span>
-          <div class="pillar-meta">
-            <strong class="pillar-name">4. Ephemeral Wipe</strong>
-            <span class="pillar-detail" id="pillar-4-detail">Temp Folder Deleted</span>
-          </div>
-        </div>
+      <!-- HIDDEN PILLAR STRIP (Preserves DOM IDs #pillar-1..4 for JS/Test Contract) -->
+      <div class="pillars-strip" aria-hidden="true">
+        <div id="pillar-1" class="pillar-pill verified"><span id="pillar-1-detail">Isolated PID</span></div>
+        <div id="pillar-2" class="pillar-pill verified"><span id="pillar-2-detail">0 Keys</span></div>
+        <div id="pillar-3" class="pillar-pill verified"><span id="pillar-3-detail">64MB Cap</span></div>
+        <div id="pillar-4" class="pillar-pill verified"><span id="pillar-4-detail">Wiped</span></div>
       </div>
 
-      <!-- RIGHT TELEMETRY & VULTR CONFIG -->
+      <!-- RIGHT CONTROLS: THEME SWITCHER + BLEED BADGE + MODEL PILL + API CONFIG -->
       <div class="hud-right">
+        <button id="btn-theme-toggle" type="button" class="btn-theme-switch" title="Switch between Warm Sandstone and Obsidian Dark Theme">
+          <span class="theme-icon" id="theme-toggle-icon">&#9728;</span>
+          <span class="theme-label" id="theme-toggle-label">Warm Theme</span>
+          <span class="theme-switch-track"><span class="theme-switch-thumb"></span></span>
+        </button>
+
         <div id="host-bleed-badge" class="hud-badge badge-emerald" title="Cryptographic verification of zero host contamination">
           0.00% HOST BLEED
         </div>
-        <div id="inference-mode-badge" class="hud-badge badge-cyan" title="Active Vultr Serverless Inference Mode &amp; Model">
+
+        <div id="inference-mode-badge" class="hud-badge badge-model" title="Active Vultr Serverless Inference Mode &amp; Model">
           deepseek-v4.1-flash-1017 &bull; LIVE VULTR API
         </div>
+
         <button id="btn-config-key" type="button" class="btn-hud-config" title="Configure Vultr Serverless Inference API Key &amp; Model">
           &#9881; API Config
         </button>
@@ -115,18 +100,17 @@
 
     <!-- MAIN 3-COLUMN WORKSPACE -->
     <main class="cockpit-grid">
-      <!-- COLUMN 1 (LEFT): LAUNCH AI MISSIONS OR RED-TEAM ATTACKS -->
-      <aside class="panel left-deck" aria-label="Mission &amp; Red-Team Controls">
+      <!-- COLUMN 1 (LEFT): MISSION & ATTACK CONTROL -->
+      <aside class="panel left-deck" aria-label="Mission &amp; Attack Control">
         <section class="deck-section">
           <div class="section-header">
-            <span class="section-eyebrow">1. AI SANDBOX MISSIONS</span>
-            <span class="section-badge">PATTERNS A &amp; B</span>
+            <span class="section-eyebrow">MISSION &amp; ATTACK CONTROL</span>
           </div>
 
           <div class="action-stack">
             <button id="btn-mission-self-heal" type="button" class="action-btn mission-btn active-action">
               <div class="btn-top-line">
-                <span class="btn-tag tag-cyan">PATTERN A &bull; CODE RUNNER</span>
+                <span class="btn-tag tag-cyan">PATTERN A &bull; SELF-HEAL</span>
                 <span class="btn-shortcut">2 Sandboxes</span>
               </div>
               <strong class="btn-title">Self-Healing Code Agent</strong>
@@ -139,7 +123,7 @@
                 <span class="btn-shortcut">Human Gate</span>
               </div>
               <strong class="btn-title">Poisoned Webpage Quarantine</strong>
-              <span class="btn-sub">Blocks hidden prompt injection &amp; freezes $4,820 payout for Human Approval</span>
+              <span class="btn-sub">Blocks hidden prompt injection &amp; freezes $4,820 payout for human approval</span>
             </button>
 
             <button id="btn-mission-cve-audit" type="button" class="action-btn mission-btn">
@@ -171,10 +155,10 @@ console.log(fs.readFileSync('../server.js', 'utf8'));</textarea>
           </div>
         </section>
 
-        <!-- 1-CLICK RED-TEAM CHAOS STRIKE BAR -->
+        <!-- RED TEAM SECTION -->
         <section class="deck-section redteam-section">
           <div class="section-header">
-            <span class="section-eyebrow crimson-text">TRY TO BREAK THE SANDBOX</span>
+            <span class="section-eyebrow crimson-text">RED TEAM</span>
             <span class="section-badge badge-crimson">RED TEAM</span>
           </div>
 
@@ -206,39 +190,46 @@ console.log(fs.readFileSync('../server.js', 'utf8'));</textarea>
         </section>
       </aside>
 
-      <!-- COLUMN 2 (CENTER): LIVE SANDBOX EXECUTION STORY & CODE -->
-      <section class="panel center-arena" aria-label="Autonomous Execution &amp; Self-Healing Arena">
+      <!-- COLUMN 2 (CENTER): LIVE EXECUTION & DIAGNOSTICS -->
+      <section class="panel center-arena" aria-label="Live Execution &amp; Diagnostics">
+        <div class="section-header arena-top-header">
+          <span class="section-eyebrow">LIVE EXECUTION &amp; DIAGNOSTICS</span>
+          <button id="btn-toggle-request" type="button" class="btn-mini-toggle">
+            Inspect Vultr API JSON
+          </button>
+        </div>
+
         <!-- 4-STAGE PIPELINE STEPPER -->
         <div id="pipeline-stepper" class="pipeline-stepper" aria-label="4-Stage Containment Pipeline">
-          <div class="pipeline-step completed" data-step="1">
+          <div class="pipeline-step completed step-primary" data-step="1">
             <span class="step-index">1</span>
             <div class="step-text">
-              <strong>Vultr AI Writes Code</strong>
-              <span id="step-1-sub">deepseek-v4.1-flash-1017</span>
+              <span class="step-eyebrow" id="step-1-sub">Step 1</span>
+              <strong>Writes Code</strong>
             </div>
           </div>
-          <div class="pipeline-connector"></div>
+          <div class="pipeline-arrow" aria-hidden="true">&rarr;</div>
           <div class="pipeline-step completed" data-step="2">
             <span class="step-index">2</span>
             <div class="step-text">
-              <strong>Spawns Sandbox Process</strong>
-              <span id="step-2-sub">Isolated PID &bull; 0 Secrets</span>
+              <span class="step-eyebrow" id="step-2-sub">Step 2</span>
+              <strong>Spawns Process</strong>
             </div>
           </div>
-          <div class="pipeline-connector"></div>
+          <div class="pipeline-arrow" aria-hidden="true">&rarr;</div>
           <div class="pipeline-step completed" data-step="3">
             <span class="step-index">3</span>
             <div class="step-text">
-              <strong>Enforces 64MB &amp; Jail</strong>
-              <span id="step-3-sub">Preload Jail &amp; Kill Timer</span>
+              <span class="step-eyebrow" id="step-3-sub">Step 3</span>
+              <strong>Enforces Jail</strong>
             </div>
           </div>
-          <div class="pipeline-connector"></div>
+          <div class="pipeline-arrow" aria-hidden="true">&rarr;</div>
           <div class="pipeline-step completed" data-step="4">
             <span class="step-index">4</span>
             <div class="step-text">
-              <strong>Wipes Folder Clean</strong>
-              <span id="step-4-sub">Temp Dir Deleted</span>
+              <span class="step-eyebrow" id="step-4-sub">Step 4</span>
+              <strong>Wipes Folder</strong>
             </div>
           </div>
         </div>
@@ -251,7 +242,7 @@ console.log(fs.readFileSync('../server.js', 'utf8'));</textarea>
                 <span id="banner-pattern-tag" class="banner-tag">PATTERN A &bull; SELF-HEALING CODE</span>
                 <span id="banner-endpoint-pill" class="endpoint-pill">https://api.vultrinference.com/v1/chat/completions</span>
               </div>
-              <h2 id="banner-title">Self-Healing Cloud Telemetry Parser</h2>
+              <h2 id="banner-title">Self-Healing Code Agent</h2>
             </div>
             <div class="run-banner-right">
               <div class="banner-metric">
@@ -268,78 +259,69 @@ console.log(fs.readFileSync('../server.js', 'utf8'));</textarea>
             </div>
           </div>
           <div id="story-comparison-strip" class="story-comparison-strip">
-            <strong>WHAT HAPPENED:</strong> Sandbox #1 caught a crash on corrupted data &amp; wiped itself clean &rarr; Vultr AI fixed the code &rarr; Sandbox #2 succeeded with 0% host bleed.
+            <strong>WHAT HAPPENED:</strong> Sandbox #1 crashed on bad data &rarr; Vultr AI fixed the code &rarr; Sandbox #2 succeeded with 0% host bleed.
           </div>
         </div>
 
-        <!-- INTERACTIVE ATTEMPT / ATTACK TABS -->
-        <div class="arena-controls-bar">
-          <div id="attempt-tabs" class="attempt-tabs" role="tablist" aria-label="Sandbox Run Attempts or Gauntlet Strikes">
-            <button type="button" class="attempt-tab" role="tab" aria-selected="false">
-              <span class="tab-status-dot dot-fault"></span>
-              <span>Attempt 1: Crash Contained (Sandbox #1 Wiped)</span>
-            </button>
-            <button type="button" class="attempt-tab active" role="tab" aria-selected="true">
-              <span class="tab-status-dot dot-pass"></span>
-              <span>Attempt 2: AI Fixed &amp; Verified (Sandbox #2 Wiped)</span>
-            </button>
-          </div>
-          <button id="btn-toggle-request" type="button" class="btn-mini-toggle">
-            Inspect Vultr API JSON
-          </button>
-        </div>
-
-        <!-- SPLIT CODE & OUTPUT VIEWPORT -->
+        <!-- SPLIT VIEWPORT: LEFT = ATTEMPTS + CODE, RIGHT = VERDICT + OUTPUT -->
         <div class="terminal-split">
-          <!-- LEFT PANE: AI CODE OR ATTACK PAYLOAD -->
-          <div class="terminal-pane">
-            <div class="pane-header">
-              <div class="pane-title-group">
-                <span class="pane-dot dot-cyan"></span>
-                <strong id="code-pane-title">Sandbox #2 Code (Written by Vultr AI)</strong>
-              </div>
+          <!-- LEFT PANE: ATTEMPT SWITCHER ROWS + SANDBOX CODE -->
+          <div class="left-exec-column">
+            <div id="attempt-tabs" class="attempt-tabs" role="tablist" aria-label="Sandbox Run Attempts or Gauntlet Strikes">
+              <button type="button" class="attempt-tab" role="tab" aria-selected="false">
+                <span class="attempt-chevron">&rsaquo;</span>
+                <span class="attempt-tab-label">Attempt 1: Wiped</span>
+                <span class="attempt-switch-pill"><span class="switch-knob"></span></span>
+              </button>
+              <button type="button" class="attempt-tab active" role="tab" aria-selected="true">
+                <span class="attempt-chevron">&rsaquo;</span>
+                <span class="attempt-tab-label">Attempt 2: Wiped</span>
+                <span class="attempt-switch-pill active-pill"><span class="switch-knob"></span></span>
+              </button>
             </div>
-            <div id="code-viewer" class="code-viewer" tabindex="0">
-              <div class="inference-reasoning-box">
-                <strong>VULTR AI DIAGNOSIS (deepseek-v4.1-flash-1017):</strong>
-                Detected crash on corrupted latencyMs row (vlt-nrt-03) in Attempt 1. Added schema validation guard to quarantine bad rows and compute clean SLA metrics in Sandbox #2.
+
+            <div class="terminal-pane code-terminal-pane">
+              <div class="pane-header">
+                <div class="pane-title-group">
+                  <span class="pane-chevron">&#8964;</span>
+                  <strong id="code-pane-title">Sandbox #2 Code</strong>
+                </div>
               </div>
-              <pre class="code-pre">// Vultr Serverless Inference [deepseek-v4.1-flash-1017] — Attempt 2 (SELF-HEALED PATCH)
+              <div id="code-viewer" class="code-viewer" tabindex="0">
+                <div class="inference-reasoning-box">
+                  <strong>VULTR AI DIAGNOSIS (deepseek-v4.1-flash-1017):</strong>
+                  Diagnosed Attempt 1 crash on corrupted row (vlt-nrt-03). Added schema validation guard to quarantine bad rows and verify clean SLA metrics in Sandbox #2.
+                </div>
+                <pre class="code-pre">const fs = require('fs');
+const path = require('path');
+
+// Vultr Serverless Inference (deepseek-v4.1-flash-1017) - Attempt 2 (SELF-HEALED PATCH)
+// Healed from Sandbox #1 fault: TypeError: [TELEMETRY_SCHEMA_CRASH] on vlt-nrt-03
 const rawBatch = [
   { region: 'ewr-nj-us', instanceId: 'vlt-ewr-01', latencyMs: 11.4, cpuPct: 42.1, meta: { tier: 'vx1-dedicated' } },
   { region: 'fra-de-eu', instanceId: 'vlt-fra-02', latencyMs: 18.9, cpuPct: 68.5, meta: { tier: 'vx1-dedicated' } },
   { region: 'nrt-jp-ap', instanceId: 'vlt-nrt-03', latencyMs: "CORRUPTED_NAN_SPIKE", cpuPct: null, meta: null },
   { region: 'sjc-ca-us', instanceId: 'vlt-sjc-04', latencyMs: 14.2, cpuPct: 51.0, meta: { tier: 'vc2-cloud' } }
-];
-
-const validRows = [];
-const quarantinedRows = [];
-for (const row of rawBatch) {
-  if (typeof row.latencyMs !== 'number' || !Number.isFinite(row.latencyMs) || !row.meta) {
-    quarantinedRows.push({ instanceId: row.instanceId, region: row.region, reason: 'SCHEMA_ANOMALY_QUARANTINED' });
-    continue;
-  }
-  validRows.push({ region: row.region, instanceId: row.instanceId, tier: row.meta.tier.toUpperCase(), latencyMs: row.latencyMs, cpuPct: row.cpuPct });
-}
-console.log(JSON.stringify({ status: 'SELF_HEALED_VERIFIED', validCount: validRows.length, quarantinedCount: quarantinedRows.length, averageLatencyMs: 14.83 }));</pre>
+];</pre>
+              </div>
             </div>
           </div>
 
-          <!-- RIGHT PANE: HUMAN SUMMARY + SANDBOX OUTPUT -->
-          <div class="terminal-pane">
+          <!-- RIGHT PANE: HUMAN SUMMARY CHIPS + SANDBOX VERIFIED OUTPUT -->
+          <div class="terminal-pane result-terminal-pane">
             <div class="pane-header">
               <div class="pane-title-group">
                 <span class="pane-dot dot-emerald" id="output-pane-dot"></span>
                 <strong id="output-pane-title">Sandbox Result &amp; Security Verdict</strong>
               </div>
-              <span id="output-exit-pill" class="exit-pill badge-emerald">EXIT 0 &bull; 48ms &bull; ISOLATED</span>
+              <span id="output-exit-pill" class="exit-pill badge-emerald">PASS &bull; 121ms &bull; PID 17472</span>
             </div>
             <div id="output-viewer" class="output-viewer" tabindex="0">
               <div class="human-digest-card digest-emerald">
                 <div class="digest-title">&#10003; Self-Healed &amp; Verified in Sandbox #2</div>
                 <div class="digest-metrics">
                   <span class="digest-chip">3 Clean Nodes Verified</span>
-                  <span class="digest-chip">1 Bad Node Quarantined (vlt-nrt-03)</span>
+                  <span class="digest-chip">1 Corrupted Row Quarantined</span>
                   <span class="digest-chip">Avg Latency: 14.83 ms</span>
                 </div>
               </div>
@@ -362,17 +344,18 @@ console.log(JSON.stringify({ status: 'SELF_HEALED_VERIFIED', validCount: validRo
         </div>
       </section>
 
-      <!-- COLUMN 3 (RIGHT): 4-PILLAR SECURITY SHIELD + HUMAN APPROVAL GATE -->
-      <aside class="panel right-inspector" aria-label="4-Pillar Security Proof &amp; Human Gate">
+      <!-- COLUMN 3 (RIGHT): 4-PILLAR SECURITY SHIELD & HUMAN GATE -->
+      <aside class="panel right-inspector" aria-label="4-Pillar Security Shield &amp; Human Gate">
+        <div class="section-header">
+          <span class="section-eyebrow">4-PILLAR SECURITY SHIELD &amp; HUMAN GATE</span>
+        </div>
+
         <!-- 4-PILLAR CONTAINMENT SHIELD & SHA-256 RECEIPT -->
         <section id="receipt-inspector" class="receipt-inspector">
           <div class="receipt-header">
-            <div>
-              <span class="section-eyebrow">3. 4-PILLAR CONTAINMENT PROOF</span>
-              <h3>Live Sandbox Security Shield</h3>
-            </div>
-            <button id="btn-copy-receipt" type="button" class="btn-copy-receipt">
-              &#128203; Copy Proof
+            <h3>LIVE SANDBOX SECURITY SHIELD</h3>
+            <button id="btn-copy-receipt" type="button" class="btn-copy-receipt" title="Copy SHA-256 Receipt JSON">
+              &#128203;
             </button>
           </div>
 
@@ -382,7 +365,7 @@ console.log(JSON.stringify({ status: 'SELF_HEALED_VERIFIED', validCount: validRo
               <span class="proof-check">&#10003;</span>
               <div class="proof-text">
                 <strong>Pillar 1: Process Isolation</strong>
-                <span>Separate Child PID &bull; Host Untouched</span>
+                <span>Child PID 17472 &ne; Host PID 14444</span>
               </div>
             </div>
             <div class="receipt-proof-item" id="proof-secrets-scrubbed">
@@ -396,14 +379,14 @@ console.log(JSON.stringify({ status: 'SELF_HEALED_VERIFIED', validCount: validRo
               <span class="proof-check">&#10003;</span>
               <div class="proof-text">
                 <strong>Pillar 3: Resource Limits</strong>
-                <span>64 MB Memory Cap &bull; 1.5s Kill Timer</span>
+                <span>64 MB Cap &bull; 121ms / 1500ms</span>
               </div>
             </div>
             <div class="receipt-proof-item" id="proof-ephemeral-destroyed">
               <span class="proof-check">&#10003;</span>
               <div class="proof-text">
                 <strong>Pillar 4: Ephemeral Wipe</strong>
-                <span>Temp Folder Deleted After Run</span>
+                <span>Temp Folder Deleted (exists = false)</span>
               </div>
             </div>
           </div>
@@ -417,7 +400,7 @@ console.log(JSON.stringify({ status: 'SELF_HEALED_VERIFIED', validCount: validRo
             <code id="receipt-sha256" class="sha256-hash">e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855</code>
           </div>
 
-          <!-- COLLAPSIBLE RAW TELEMETRY DRAWER (KEEPS ALL DOM IDS INTACT WITHOUT CLUTTER) -->
+          <!-- COLLAPSIBLE RAW TELEMETRY DRAWER -->
           <details class="raw-telemetry-drawer">
             <summary>Inspect Raw Process PIDs &amp; Sandbox Env Keys</summary>
             <div class="receipt-kv-grid">
@@ -431,7 +414,7 @@ console.log(JSON.stringify({ status: 'SELF_HEALED_VERIFIED', validCount: validRo
               </div>
               <div class="kv-cell">
                 <span class="kv-label">Child vs Host PID</span>
-                <code id="rcpt-pids">Child: 6348 / Host: 6261</code>
+                <code id="rcpt-pids">Child: 17472 / Host: 14444</code>
               </div>
               <div class="kv-cell">
                 <span class="kv-label">Exit / Signal</span>
@@ -454,41 +437,44 @@ console.log(JSON.stringify({ status: 'SELF_HEALED_VERIFIED', validCount: validRo
         </section>
 
         <!-- PATTERN B: HUMAN APPROVAL GATE CARD -->
-        <section id="approval-gate-card" class="approval-gate-card gate-standby">
-          <div class="gate-header">
-            <div>
-              <span class="section-eyebrow">HUMAN-IN-THE-LOOP GATE</span>
-              <h3>High-Risk Action Approval</h3>
+        <div class="gate-section-wrap">
+          <div class="gate-outer-title">HUMAN-IN-THE-LOOP GATE</div>
+          <section id="approval-gate-card" class="approval-gate-card gate-standby">
+            <div class="gate-header">
+              <div>
+                <span class="gate-eyebrow">HUMAN-IN-THE-LOOP GATE</span>
+                <h3>High-Risk Action Approval</h3>
+              </div>
+              <span id="gate-status-badge" class="gate-badge badge-standby">STANDBY</span>
             </div>
-            <span id="gate-status-badge" class="gate-badge badge-standby">STANDBY</span>
-          </div>
 
-          <div id="gate-body-content" class="gate-body">
-            <p class="gate-summary" id="gate-summary-text">
-              Freezes untrusted web/DOM payouts &amp; firewall changes until a human approves. Click <strong>Poisoned Webpage Quarantine</strong> to test live.
-            </p>
-            <div id="gate-threats-list" class="gate-threats-list"></div>
-          </div>
+            <div id="gate-body-content" class="gate-body">
+              <p class="gate-summary" id="gate-summary-text">
+                Freezes untrusted web/DOM payouts &amp; firewall changes until a human approves. Click <strong>Poisoned Webpage Quarantine</strong> to test live.
+              </p>
+              <div id="gate-threats-list" class="gate-threats-list"></div>
+            </div>
 
-          <div class="gate-actions">
-            <button id="btn-gate-approve" type="button" class="btn-gate-approve" disabled>
-              &#10003; Approve Safe Invoices
-            </button>
-            <button id="btn-gate-reject" type="button" class="btn-gate-reject" disabled>
-              &#10005; Block Attack
-            </button>
-          </div>
-        </section>
+            <div class="gate-actions">
+              <button id="btn-gate-approve" type="button" class="btn-gate-approve" disabled>
+                &#10003; Approve Safe Invoices
+              </button>
+              <button id="btn-gate-reject" type="button" class="btn-gate-reject" disabled>
+                &#10005; Block Attack
+              </button>
+            </div>
+          </section>
+        </div>
       </aside>
     </main>
 
-    <!-- BOTTOM STRIP: IMMUTABLE SESSION CONTAINMENT LEDGER -->
-    <footer class="bottom-ledger" aria-label="Immutable Session Containment Ledger">
+    <!-- BOTTOM STRIP: LIVE SANDBOX AUDIT LOG -->
+    <footer class="bottom-ledger" aria-label="Live Sandbox Audit Log">
       <div class="ledger-header-bar">
         <div class="ledger-title-group">
           <span class="ledger-live-dot"></span>
           <strong>LIVE SANDBOX AUDIT LOG</strong>
-          <span id="ledger-count-badge" class="ledger-count-badge">0 Runs Recorded</span>
+          <span id="ledger-count-badge" class="ledger-count-badge">4 Runs Recorded</span>
         </div>
         <span class="ledger-hint">Click any run below to inspect its sandbox proof &amp; SHA-256 receipt</span>
       </div>
