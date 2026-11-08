@@ -31,7 +31,7 @@ Most AI agent demos wire LLM output directly into `eval()`, `exec()`, or an unis
 Requires Node.js `v18+` (tested on `v20` and `v22`). Zero `npm install` network fetches required.
 
 ```bash
-# 1. Run the 10 automated containment & red-team adversarial test suites
+# 1. Run the 12 automated containment & red-team adversarial test suites
 npm test
 
 # 2. Launch the Tactical Containment Cockpit on http://localhost:4680

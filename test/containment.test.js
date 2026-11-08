@@ -630,6 +630,19 @@ test('Morning-After Pipeline 04 Hardening: Blocks Node 22 process.getBuiltinModu
         results.esmModuleCreateRequire = e.message.includes('CONTAINMENT_INTERCEPT') ? 'BLOCKED' : 'OTHER';
       }
 
+      // 9. Raw unverified integer FD readFileSync(0) vs legitimate jailed fs.openSync FD
+      try {
+        fs.readFileSync(0, 'utf8');
+        results.unverifiedFdRead = 'ESCAPED';
+      } catch (e) {
+        results.unverifiedFdRead = e.message.includes('UNVERIFIED_FILE_DESCRIPTOR') ? 'BLOCKED' : 'OTHER';
+      }
+
+      const validFd = fs.openSync('./fd-test.txt', 'w+');
+      fs.writeFileSync(validFd, 'ok-fd');
+      fs.closeSync(validFd);
+      results.jailedFdRoundtrip = fs.readFileSync('./fd-test.txt', 'utf8') === 'ok-fd' ? 'OK' : 'FAIL';
+
       console.log(JSON.stringify(results));
     })();
   `;
@@ -651,6 +664,8 @@ test('Morning-After Pipeline 04 Hardening: Blocks Node 22 process.getBuiltinModu
   assert.equal(checks.esmSqlite, 'BLOCKED');
   assert.equal(checks.esmWasi, 'BLOCKED');
   assert.equal(checks.esmModuleCreateRequire, 'BLOCKED');
+  assert.equal(checks.unverifiedFdRead, 'BLOCKED');
+  assert.equal(checks.jailedFdRoundtrip, 'OK');
 
   // Verify /api/config/key returns top-level liveKeyConfigured and updates defaultModel
   const server = createAppServer();

@@ -139,6 +139,7 @@ const httpAgent = (() => { try { return require('_http_agent'); } catch { return
 const tlsWrap = (() => { try { return require('_tls_wrap'); } catch { return null; } })();
 
 const JAIL_ROOT = fs.realpathSync(${JSON.stringify(ephemeralDir)});
+const jailedOpenFds = new Set();
 
 function createInterceptError(tag, detail, code) {
   const msg = \`[CONTAINMENT_INTERCEPT: \${tag}] \${detail} jail=\${JAIL_ROOT}\`;
@@ -173,7 +174,14 @@ function lockProperty(target, prop, value, enumerable = true) {
  */
 function resolveCandidatePath(opName, targetPath) {
   if (typeof targetPath === 'number' && Number.isInteger(targetPath) && targetPath >= 0) {
-    return null; // Valid integer file descriptor opened via jailed fs.open
+    if (jailedOpenFds.has(targetPath)) {
+      return null; // Valid integer file descriptor opened via jailed fs.open / fs.openSync
+    }
+    throw createInterceptError(
+      'PATH_ESCAPE_BLOCKED',
+      \`op=\${opName} reason=UNVERIFIED_FILE_DESCRIPTOR fd=\${targetPath}\`,
+      'EACCES_BRZ_JAIL'
+    );
   }
   if (typeof targetPath === 'string') {
     if (targetPath.startsWith('file://')) {
@@ -263,10 +271,40 @@ for (const method of fsMethodsSinglePath) {
     const original = fs[method].bind(fs);
     const patched = function patchedFsMethod(targetPath, ...rest) {
       const safePath = assertJailedPath('fs.' + method, targetPath);
+      if (method === 'openSync') {
+        const fd = original(safePath, ...rest);
+        if (typeof fd === 'number') jailedOpenFds.add(fd);
+        return fd;
+      }
+      if (method === 'open') {
+        const cb = rest[rest.length - 1];
+        if (typeof cb === 'function') {
+          const wrappedCb = function (err, fd, ...cbRest) {
+            if (!err && typeof fd === 'number') jailedOpenFds.add(fd);
+            return cb.call(this, err, fd, ...cbRest);
+          };
+          return original(safePath, ...rest.slice(0, -1), wrappedCb);
+        }
+      }
       return original(safePath, ...rest);
     };
     lockProperty(fs, method, patched);
   }
+}
+
+if (typeof fs.closeSync === 'function') {
+  const origCloseSync = fs.closeSync.bind(fs);
+  lockProperty(fs, 'closeSync', function patchedCloseSync(fd, ...rest) {
+    jailedOpenFds.delete(fd);
+    return origCloseSync(fd, ...rest);
+  });
+}
+if (typeof fs.close === 'function') {
+  const origClose = fs.close.bind(fs);
+  lockProperty(fs, 'close', function patchedClose(fd, ...rest) {
+    jailedOpenFds.delete(fd);
+    return origClose(fd, ...rest);
+  });
 }
 
 if (origRealpathSyncNative && fs.realpathSync) {

@@ -65,10 +65,18 @@ const MODEL_ALIASES = {
 };
 
 let runtimeConfiguredKey = null;
+let runtimeForceTwin = false;
 let runtimeDefaultModel = DEFAULT_VULTR_MODEL;
 
 function setRuntimeApiKey(key, model) {
-  runtimeConfiguredKey = typeof key === 'string' && key.trim() ? key.trim() : null;
+  const trimmed = typeof key === 'string' ? key.trim() : '';
+  if (trimmed === 'TWIN' || trimmed === 'DETERMINISTIC_TWIN') {
+    runtimeConfiguredKey = null;
+    runtimeForceTwin = true;
+  } else {
+    runtimeConfiguredKey = trimmed || null;
+    runtimeForceTwin = false;
+  }
   if (typeof model === 'string' && SUPPORTED_MODELS.includes(model.trim())) {
     runtimeDefaultModel = model.trim();
   }
@@ -82,6 +90,12 @@ function setRuntimeApiKey(key, model) {
 }
 
 function getEffectiveApiKey(overrideKey) {
+  if (overrideKey === 'TWIN' || overrideKey === 'DETERMINISTIC_TWIN') {
+    return '';
+  }
+  if (!overrideKey && runtimeForceTwin) {
+    return '';
+  }
   const candidate = overrideKey || runtimeConfiguredKey || process.env.VULTR_INFERENCE_API_KEY || '';
   if (!candidate || candidate === 'vltr_live_secret_key_sentinel_8821') {
     return '';

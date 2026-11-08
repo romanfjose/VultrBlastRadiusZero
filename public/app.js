@@ -389,11 +389,11 @@ while (true) {
     const exec = attempt.execution || {};
     const receipt = attempt.receipt || mission.latestReceipt;
 
-    el.step1Sub.textContent = `${(inf.model || 'qwen2.5-coder').replace('-instruct', '')} • Attempt #${attempt.attemptNumber}`;
+    el.step1Sub.textContent = `${(inf.model || 'deepseek-v4.1-flash-1017').replace('-instruct', '')} • Attempt #${attempt.attemptNumber}`;
     el.codePaneTitle.textContent = `Sandbox #${attempt.attemptNumber} Executed Code (${inf.mode || 'VULTR_INFERENCE'})`;
 
     let codeHtml = `<div class="inference-reasoning-box">
-      <strong>VULTR INFERENCE REASONING (${escapeHtml(inf.model || 'qwen2.5-coder-32b-instruct')} &bull; ${escapeHtml(inf.mode || 'TWIN')}):</strong>
+      <strong>VULTR INFERENCE REASONING (${escapeHtml(inf.model || 'deepseek-v4.1-flash-1017')} &bull; ${escapeHtml(inf.mode || 'TWIN')}):</strong>
       ${escapeHtml(inf.reasoning || 'Generated isolated execution plan.')}
     </div>`;
 

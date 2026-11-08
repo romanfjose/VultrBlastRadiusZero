@@ -58,7 +58,7 @@ UNIFIED PATTERN A + PATTERN B + RED-TEAM CHAOS BAR:
 
 ### Technology Tags
 ```text
-Vultr Serverless Inference, Vultr Cloud Compute, Node.js, Qwen2.5-Coder-32B, DeepSeek-R1, Ephemeral Sandbox, AI Security, Prompt Injection Quarantine, SHA-256 Telemetry
+Vultr Serverless Inference, Vultr Cloud Compute, Node.js, DeepSeek-V4.1-Flash, Qwen3.8-Flash, Ephemeral Sandbox, AI Security, Prompt Injection Quarantine, SHA-256 Telemetry
 ```
 
 ---

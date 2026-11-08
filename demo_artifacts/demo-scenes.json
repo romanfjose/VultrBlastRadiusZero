@@ -1,22 +1,22 @@
 {
   "appUrl": "http://127.0.0.1:4680",
-  "recordedAt": "2026-11-08T16:37:42.409Z",
+  "recordedAt": "2026-11-08T19:29:05.581Z",
   "scenes": [
     {
       "id": "scene-01-pattern-a",
       "stepBadge": "SCENE 1 / 4 · PATTERN A SELF-HEALING",
       "title": "Autonomous Crash Recovery Across Ephemeral Sandboxes",
-      "subtitle": "Sandbox #1 catches TypeError -> Vultr Qwen2.5-Coder patches code -> Sandbox #2 passes with 0.00% Host Bleed",
+      "subtitle": "Sandbox #1 catches TypeError -> Vultr deepseek-v4.1-flash-1017 patches code -> Sandbox #2 passes with 0.00% Host Bleed",
       "durationMs": 3200,
       "actions": [
         {
           "type": "click",
-          "selector": "[data-attempt=\"0\"], .attempt-tab:first-child",
-          "waitAfterMs": 1100
+          "selector": "[data-attempt-idx=\"0\"], .attempt-tab:first-child",
+          "waitAfterMs": 1200
         },
         {
           "type": "click",
-          "selector": "[data-attempt=\"1\"], .attempt-tab:nth-child(2)",
+          "selector": "[data-attempt-idx=\"1\"], .attempt-tab:nth-child(2)",
           "waitAfterMs": 1200
         }
       ]
@@ -30,18 +30,18 @@
       "actions": [
         {
           "type": "click",
-          "selector": "#btn-run-gauntlet",
-          "waitAfterMs": 2200
+          "selector": "#btn-strike-gauntlet",
+          "waitAfterMs": 2400
         },
         {
           "type": "click",
-          "selector": "[data-strike=\"0\"], .attempt-tab:first-child",
-          "waitAfterMs": 900
+          "selector": "[data-strike-idx=\"0\"], .attempt-tab:first-child",
+          "waitAfterMs": 1000
         },
         {
           "type": "click",
-          "selector": "[data-strike=\"2\"], .attempt-tab:nth-child(3)",
-          "waitAfterMs": 900
+          "selector": "[data-strike-idx=\"2\"], .attempt-tab:nth-child(3)",
+          "waitAfterMs": 1000
         }
       ]
     },
@@ -54,8 +54,8 @@
       "actions": [
         {
           "type": "click",
-          "selector": "[data-scenario=\"pattern-b-dom\"], #btn-scenario-b",
-          "waitAfterMs": 1800
+          "selector": "#btn-mission-hostile-dom",
+          "waitAfterMs": 2200
         },
         {
           "type": "click",
