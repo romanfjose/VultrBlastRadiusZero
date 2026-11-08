@@ -1,80 +1,109 @@
 {
   "appUrl": "http://127.0.0.1:4680",
-  "recordedAt": "2026-11-08T19:29:05.581Z",
+  "recordedAt": "2026-11-08T19:56:53.166Z",
   "scenes": [
     {
-      "id": "scene-01-pattern-a",
-      "stepBadge": "SCENE 1 / 4 · PATTERN A SELF-HEALING",
-      "title": "Autonomous Crash Recovery Across Ephemeral Sandboxes",
-      "subtitle": "Sandbox #1 catches TypeError -> Vultr deepseek-v4.1-flash-1017 patches code -> Sandbox #2 passes with 0.00% Host Bleed",
-      "durationMs": 3200,
+      "id": "scene-01-pattern-a-crash",
+      "stepBadge": "SCENE 1 / 5 · PATTERN A: SANDBOX #1 FAULT CONTAINMENT",
+      "title": "Untrusted Code Crashes Inside Isolated Ephemeral Sandbox #1",
+      "subtitle": "Corrupted telemetry triggers TypeError in isolated child PID -> Sandbox #1 wiped cleanly with 0.00% Host Bleed",
+      "durationMs": 7500,
       "actions": [
         {
           "type": "click",
           "selector": "[data-attempt-idx=\"0\"], .attempt-tab:first-child",
-          "waitAfterMs": 1200
+          "waitAfterMs": 3800
         },
         {
           "type": "click",
           "selector": "[data-attempt-idx=\"1\"], .attempt-tab:nth-child(2)",
-          "waitAfterMs": 1200
+          "waitAfterMs": 3200
         }
       ]
     },
     {
-      "id": "scene-02-redteam-gauntlet",
-      "stepBadge": "SCENE 2 / 4 · LIVE CONTAINMENT MOMENT",
-      "title": "1-Click 4-Pillar Red-Team Exploit Gauntlet",
-      "subtitle": "Firing live Env Exfil, rm -rf .. Escape, and Infinite Loop Bomb -> 4/4 Jailed & SIGKILL Contained",
-      "durationMs": 4200,
+      "id": "scene-02-vultr-inference-payload",
+      "stepBadge": "SCENE 2 / 5 · VULTR SERVERLESS INFERENCE SELF-HEALING",
+      "title": "Live Vultr API (deepseek-v4.1-flash-1017) Diagnoses Stderr & Patches Code",
+      "subtitle": "Inspecting real POST /v1/chat/completions payload -> Attempt #2 passes in fresh Ephemeral Sandbox #2",
+      "durationMs": 7500,
+      "actions": [
+        {
+          "type": "click",
+          "selector": "#btn-toggle-request",
+          "waitAfterMs": 3800
+        },
+        {
+          "type": "click",
+          "selector": "#btn-toggle-request",
+          "waitAfterMs": 2600
+        }
+      ]
+    },
+    {
+      "id": "scene-03-redteam-gauntlet",
+      "stepBadge": "SCENE 3 / 5 · MANDATORY CONTAINMENT MOMENT (4 LIVE EXPLOITS)",
+      "title": "Firing 1-Click 4-Pillar Red-Team Chaos Gauntlet",
+      "subtitle": "Strike 1: Env Secret Exfil Blocked | Strike 2: rm -rf .. Jailed | Strike 3: Infinite Loop SIGKILL Terminated",
+      "durationMs": 13500,
       "actions": [
         {
           "type": "click",
           "selector": "#btn-strike-gauntlet",
-          "waitAfterMs": 2400
+          "waitAfterMs": 3600
         },
         {
           "type": "click",
           "selector": "[data-strike-idx=\"0\"], .attempt-tab:first-child",
-          "waitAfterMs": 1000
+          "waitAfterMs": 3200
+        },
+        {
+          "type": "click",
+          "selector": "[data-strike-idx=\"1\"], .attempt-tab:nth-child(2)",
+          "waitAfterMs": 3200
         },
         {
           "type": "click",
           "selector": "[data-strike-idx=\"2\"], .attempt-tab:nth-child(3)",
-          "waitAfterMs": 1000
+          "waitAfterMs": 3200
         }
       ]
     },
     {
-      "id": "scene-03-pattern-b-dom-gate",
-      "stepBadge": "SCENE 3 / 4 · PATTERN B DOM QUARANTINE",
-      "title": "Hostile Web/DOM Prompt Injection & Human Approval Gate",
-      "subtitle": "Strips hidden CSS/Script exfiltration traps and freezes port-22 mutation until Human Rejects",
-      "durationMs": 3800,
+      "id": "scene-04-pattern-b-dom-gate",
+      "stepBadge": "SCENE 4 / 5 · PATTERN B: HOSTILE DOM & HUMAN APPROVAL GATE",
+      "title": "Prompt-Injected Vendor Invoice Quarantined Behind Operator Gate",
+      "subtitle": "Strips hidden CSS/Script secret-exfil traps and freezes $4,820 payout + Port 22 mutation until Operator Blocks",
+      "durationMs": 9500,
       "actions": [
         {
           "type": "click",
           "selector": "#btn-mission-hostile-dom",
-          "waitAfterMs": 2200
+          "waitAfterMs": 4200
         },
         {
           "type": "click",
           "selector": "#btn-gate-reject",
-          "waitAfterMs": 1200
+          "waitAfterMs": 3800
         }
       ]
     },
     {
-      "id": "scene-04-sha256-receipt",
-      "stepBadge": "SCENE 4 / 4 · CRYPTOGRAPHIC PROOF",
-      "title": "64-Hex SHA-256 Ephemeral Teardown Receipt",
-      "subtitle": "Every sandbox directory is wiped via fs.rmSync and verified fs.existsSync === false",
-      "durationMs": 2600,
+      "id": "scene-05-sha256-receipt",
+      "stepBadge": "SCENE 5 / 5 · CRYPTOGRAPHIC SHA-256 TEARDOWN PROOF",
+      "title": "Every Ephemeral Sandbox Wiped via fs.rmSync & Verified === false",
+      "subtitle": "64-Hex SHA-256 Containment Receipt & Immutable Session Ledger prove 0.00% Host Bleed across all runs",
+      "durationMs": 6500,
       "actions": [
         {
           "type": "click",
           "selector": "#btn-copy-receipt",
-          "waitAfterMs": 1400
+          "waitAfterMs": 3200
+        },
+        {
+          "type": "click",
+          "selector": "#ledger-tbody tr:nth-child(2)",
+          "waitAfterMs": 2600
         }
       ]
     }
